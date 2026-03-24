@@ -1,0 +1,6 @@
+id,code,description,active_flag,active_date,include_followers,identifier_shared_service
+1,NLRT001,Audience,TRUE,2024-01-01,FALSE,audience
+2,NLRT002,Audience with Followers,TRUE,2024-01-01,TRUE,audience
+3,NLRT003,Segment,TRUE,2024-01-01,FALSE,segment
+4,NLRT004,Group,TRUE,2024-01-01,FALSE,group
+5,NLRT005,All Employees,TRUE,2024-01-01,FALSE,all

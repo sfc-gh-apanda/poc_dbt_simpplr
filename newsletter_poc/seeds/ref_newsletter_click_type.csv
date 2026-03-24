@@ -1,0 +1,4 @@
+id,code,description,active_flag,active_date,identifier_shared_service
+1,NLC001,Link,TRUE,2024-01-01,link
+2,NLC002,Button,TRUE,2024-01-01,button
+3,NLC003,Image,TRUE,2024-01-01,image

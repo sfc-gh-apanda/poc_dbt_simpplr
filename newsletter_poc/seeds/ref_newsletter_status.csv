@@ -1,0 +1,7 @@
+id,code,description,active_flag,active_date,identifier_shared_service
+1,NLS001,Draft,TRUE,2024-01-01,draft
+2,NLS002,Scheduled,TRUE,2024-01-01,scheduled
+3,NLS003,Sending,TRUE,2024-01-01,sending
+4,NLS004,Sent,TRUE,2024-01-01,sent
+5,NLS005,Failed,TRUE,2024-01-01,failed
+6,NLS006,Cancelled,TRUE,2024-01-01,cancelled
