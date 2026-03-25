@@ -35,9 +35,9 @@ ORDER BY 1 DESC;
 CREATE OR REPLACE VIEW V_RUN_DURATION_TREND AS
 SELECT
     DATE(run_started_at)                                     AS run_date,
-    ROUND(AVG(run_duration_seconds), 2)                      AS avg_duration_sec,
+    run_duration_seconds,
     ROUND(AVG(run_duration_seconds) OVER (
-        ORDER BY DATE(run_started_at)
+        ORDER BY run_started_at
         ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
     ), 2)                                                    AS rolling_7d_avg_sec,
     models_run,
@@ -74,6 +74,21 @@ LIMIT 10;
 
 -- 2a. Error frequency by model (which models fail most?)
 CREATE OR REPLACE VIEW V_ERROR_FREQUENCY_BY_MODEL AS
+WITH error_messages AS (
+    SELECT
+        model_name,
+        schema_name,
+        materialization,
+        started_at,
+        COALESCE(error_message, 'unknown')                   AS error_msg,
+        ROW_NUMBER() OVER (
+            PARTITION BY model_name, schema_name, materialization, error_message
+            ORDER BY started_at DESC
+        )                                                    AS dedup_rn
+    FROM DBT_MODEL_LOG
+    WHERE status IN ('FAIL', 'ERROR')
+      AND started_at >= DATEADD('day', -30, CURRENT_DATE())
+)
 SELECT
     model_name,
     schema_name,
@@ -82,11 +97,10 @@ SELECT
     MIN(started_at)                                          AS first_failure_at,
     MAX(started_at)                                          AS last_failure_at,
     DATEDIFF('hour', MAX(started_at), CURRENT_TIMESTAMP())   AS hours_since_last_failure,
-    LISTAGG(DISTINCT COALESCE(error_message, 'unknown'), ' | ')
+    LISTAGG(error_msg, ' | ')
         WITHIN GROUP (ORDER BY started_at DESC)              AS recent_errors
-FROM DBT_MODEL_LOG
-WHERE status IN ('FAIL', 'ERROR')
-  AND started_at >= DATEADD('day', -30, CURRENT_DATE())
+FROM error_messages
+WHERE dedup_rn = 1
 GROUP BY model_name, schema_name, materialization
 ORDER BY total_failures DESC;
 
@@ -155,23 +169,36 @@ LIMIT 20;
 
 -- 3b. Row count trend per model (detect data volume changes)
 CREATE OR REPLACE VIEW V_ROW_COUNT_TREND AS
+WITH daily_rows AS (
+    SELECT
+        model_name,
+        DATE(started_at)                                     AS run_date,
+        AVG(rows_affected)                                   AS avg_rows,
+        MAX(rows_affected)                                   AS max_rows,
+        MIN(rows_affected)                                   AS min_rows
+    FROM DBT_MODEL_LOG
+    WHERE rows_affected IS NOT NULL
+      AND started_at >= DATEADD('day', -14, CURRENT_DATE())
+    GROUP BY model_name, DATE(started_at)
+)
 SELECT
     model_name,
-    DATE(started_at)                                         AS run_date,
-    AVG(rows_affected)                                       AS avg_rows,
-    MAX(rows_affected)                                       AS max_rows,
-    MIN(rows_affected)                                       AS min_rows,
-    LAG(AVG(rows_affected)) OVER (
-        PARTITION BY model_name ORDER BY DATE(started_at)
+    run_date,
+    avg_rows,
+    max_rows,
+    min_rows,
+    LAG(avg_rows) OVER (
+        PARTITION BY model_name ORDER BY run_date
     )                                                        AS prev_day_avg_rows,
     ROUND(
-        (AVG(rows_affected) - prev_day_avg_rows) * 100.0
-        / NULLIF(prev_day_avg_rows, 0), 1
+        (avg_rows - LAG(avg_rows) OVER (
+            PARTITION BY model_name ORDER BY run_date
+        )) * 100.0
+        / NULLIF(LAG(avg_rows) OVER (
+            PARTITION BY model_name ORDER BY run_date
+        ), 0), 1
     )                                                        AS pct_change
-FROM DBT_MODEL_LOG
-WHERE rows_affected IS NOT NULL
-  AND started_at >= DATEADD('day', -14, CURRENT_DATE())
-GROUP BY model_name, DATE(started_at)
+FROM daily_rows
 ORDER BY model_name, run_date DESC;
 
 -- 3c. Incremental model efficiency (rows processed per run)
@@ -328,20 +355,30 @@ ORDER BY m.started_at DESC;
 -- 6. TESTING METRICS
 -- ═══════════════════════════════════════════════════════════════
 
--- 6a. Test results from Snowflake query history (dbt tests emit specific query_tags)
+-- 6a. Test results from Snowflake query history
+-- dbt tests compile to "select count(*) as failures..." queries.
+-- Tests don't inherit model query_tags, so we match by SQL pattern
+-- and target schema references.
 CREATE OR REPLACE VIEW V_TEST_RESULTS AS
 SELECT
-    query_tag,
+    COALESCE(query_tag, 'no_tag')                            AS query_tag,
     DATE(start_time)                                         AS test_date,
     execution_status,
     COUNT(*)                                                 AS test_count,
     ROUND(AVG(total_elapsed_time) / 1000.0, 2)               AS avg_test_sec,
     SUM(rows_produced)                                       AS total_rows_returned
 FROM SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY
-WHERE query_tag LIKE 'dbt_%newsletter%'
-  AND LOWER(query_text) LIKE '%select count(%)%'
+WHERE (
+        LOWER(query_text) LIKE '%select count(*) as failures%'
+        OR LOWER(query_text) LIKE '%select count(*) as validation_errors%'
+        OR (LOWER(query_text) LIKE '%select count(%)%'
+            AND LOWER(query_text) LIKE '%simpplr_dbt_%')
+    )
+  AND LOWER(query_text) NOT LIKE '%insert%'
+  AND LOWER(query_text) NOT LIKE '%create%'
+  AND LOWER(query_text) NOT LIKE '%information_schema%'
   AND start_time >= DATEADD('day', -7, CURRENT_DATE())
-GROUP BY query_tag, DATE(start_time), execution_status
+GROUP BY COALESCE(query_tag, 'no_tag'), DATE(start_time), execution_status
 ORDER BY test_date DESC;
 
 -- 6b. Test pass/fail summary by day
@@ -355,9 +392,15 @@ SELECT
     ROUND(tests_passed * 100.0
           / NULLIF(total_tests, 0), 1)                       AS pass_rate_pct
 FROM SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY
-WHERE query_tag LIKE 'dbt_%newsletter%'
-  AND LOWER(query_text) LIKE '%select count(%)%'
+WHERE (
+        LOWER(query_text) LIKE '%select count(*) as failures%'
+        OR LOWER(query_text) LIKE '%select count(*) as validation_errors%'
+        OR (LOWER(query_text) LIKE '%select count(%)%'
+            AND LOWER(query_text) LIKE '%simpplr_dbt_%')
+    )
   AND LOWER(query_text) NOT LIKE '%insert%'
+  AND LOWER(query_text) NOT LIKE '%create%'
+  AND LOWER(query_text) NOT LIKE '%information_schema%'
   AND start_time >= DATEADD('day', -14, CURRENT_DATE())
 GROUP BY 1
 ORDER BY 1 DESC;
