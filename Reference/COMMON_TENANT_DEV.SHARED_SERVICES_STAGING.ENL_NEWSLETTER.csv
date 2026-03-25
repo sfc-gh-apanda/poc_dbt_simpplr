@@ -1,0 +1,1256 @@
+ID,CREATED_BY,CREATED_DATETIME,UPDATED_BY,UPDATED_DATETIME,RAW_INFORMATION,FILE_NAME
+12231,SYSTEM,2026-03-23 13:40:22.149,,,"{
+  ""headers"": [
+    {
+      ""key"": ""id"",
+      ""value"": ""6738de67-fe58-40a8-bf29-d2ce27e81338""
+    },
+    {
+      ""key"": ""eventType"",
+      ""value"": ""NEWSLETTER_CREATED""
+    },
+    {
+      ""key"": ""aggregate_id"",
+      ""value"": ""202a20ae-ba80-4d69-ad0f-46febe2e293c""
+    },
+    {
+      ""key"": ""tenant_info"",
+      ""value"": ""{\""accountId\"":\""260cd6ce-041e-4252-abcd-cd93f9804d4e\""}""
+    },
+    {
+      ""key"": ""kafka_offset"",
+      ""value"": ""34275""
+    },
+    {
+      ""key"": ""kafka_partition"",
+      ""value"": ""0""
+    },
+    {
+      ""key"": ""kafka_timestamp"",
+      ""value"": ""1774272888694""
+    }
+  ]
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=13/ENL_Newsletter_Dev+0+0000034275.headers.json.gz
+12232,SYSTEM,2026-03-23 13:40:22.149,,,"{
+  ""headers"": [
+    {
+      ""key"": ""id"",
+      ""value"": ""7639293c-bb8c-46e2-97b6-3b6fff21d6f5""
+    },
+    {
+      ""key"": ""eventType"",
+      ""value"": ""NEWSLETTER_CREATED""
+    },
+    {
+      ""key"": ""aggregate_id"",
+      ""value"": ""85db08a2-3579-49b8-b4a4-1d80fd9021a7""
+    },
+    {
+      ""key"": ""tenant_info"",
+      ""value"": ""{\""accountId\"":\""586bea5e-0819-4b82-9462-adea5658eb47\""}""
+    },
+    {
+      ""key"": ""kafka_offset"",
+      ""value"": ""34276""
+    },
+    {
+      ""key"": ""kafka_partition"",
+      ""value"": ""0""
+    },
+    {
+      ""key"": ""kafka_timestamp"",
+      ""value"": ""1774272898306""
+    }
+  ]
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=13/ENL_Newsletter_Dev+0+0000034275.headers.json.gz
+12233,SYSTEM,2026-03-23 13:40:22.149,,,"{
+  ""headers"": [
+    {
+      ""key"": ""id"",
+      ""value"": ""a1377dcb-f20c-40e7-a711-f6b93b87f9a4""
+    },
+    {
+      ""key"": ""eventType"",
+      ""value"": ""NEWSLETTER_MODIFIED""
+    },
+    {
+      ""key"": ""aggregate_id"",
+      ""value"": ""85db08a2-3579-49b8-b4a4-1d80fd9021a7""
+    },
+    {
+      ""key"": ""tenant_info"",
+      ""value"": ""{\""accountId\"":\""586bea5e-0819-4b82-9462-adea5658eb47\""}""
+    },
+    {
+      ""key"": ""kafka_offset"",
+      ""value"": ""34277""
+    },
+    {
+      ""key"": ""kafka_partition"",
+      ""value"": ""0""
+    },
+    {
+      ""key"": ""kafka_timestamp"",
+      ""value"": ""1774272908935""
+    }
+  ]
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=13/ENL_Newsletter_Dev+0+0000034275.headers.json.gz
+12234,SYSTEM,2026-03-23 13:40:22.149,,,"{
+  ""headers"": [
+    {
+      ""key"": ""id"",
+      ""value"": ""12534e6c-c526-49ba-883b-76f138f5b931""
+    },
+    {
+      ""key"": ""eventType"",
+      ""value"": ""NEWSLETTER_MODIFIED""
+    },
+    {
+      ""key"": ""aggregate_id"",
+      ""value"": ""85db08a2-3579-49b8-b4a4-1d80fd9021a7""
+    },
+    {
+      ""key"": ""tenant_info"",
+      ""value"": ""{\""accountId\"":\""586bea5e-0819-4b82-9462-adea5658eb47\""}""
+    },
+    {
+      ""key"": ""kafka_offset"",
+      ""value"": ""34278""
+    },
+    {
+      ""key"": ""kafka_partition"",
+      ""value"": ""0""
+    },
+    {
+      ""key"": ""kafka_timestamp"",
+      ""value"": ""1774272920066""
+    }
+  ]
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=13/ENL_Newsletter_Dev+0+0000034275.headers.json.gz
+12235,SYSTEM,2026-03-23 13:40:22.149,,,"{
+  ""headers"": [
+    {
+      ""key"": ""id"",
+      ""value"": ""26e5792b-92a9-4e10-a180-8527a521d5b6""
+    },
+    {
+      ""key"": ""eventType"",
+      ""value"": ""NEWSLETTER_MODIFIED""
+    },
+    {
+      ""key"": ""aggregate_id"",
+      ""value"": ""85db08a2-3579-49b8-b4a4-1d80fd9021a7""
+    },
+    {
+      ""key"": ""tenant_info"",
+      ""value"": ""{\""accountId\"":\""586bea5e-0819-4b82-9462-adea5658eb47\""}""
+    },
+    {
+      ""key"": ""kafka_offset"",
+      ""value"": ""34279""
+    },
+    {
+      ""key"": ""kafka_partition"",
+      ""value"": ""0""
+    },
+    {
+      ""key"": ""kafka_timestamp"",
+      ""value"": ""1774272924619""
+    }
+  ]
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=13/ENL_Newsletter_Dev+0+0000034275.headers.json.gz
+12236,SYSTEM,2026-03-23 13:40:22.149,,,"{
+  ""headers"": [
+    {
+      ""key"": ""id"",
+      ""value"": ""0100bb85-e4cf-4b1b-afc2-949f042a3bf4""
+    },
+    {
+      ""key"": ""eventType"",
+      ""value"": ""NEWSLETTER_MODIFIED""
+    },
+    {
+      ""key"": ""aggregate_id"",
+      ""value"": ""85db08a2-3579-49b8-b4a4-1d80fd9021a7""
+    },
+    {
+      ""key"": ""tenant_info"",
+      ""value"": ""{\""accountId\"":\""586bea5e-0819-4b82-9462-adea5658eb47\""}""
+    },
+    {
+      ""key"": ""kafka_offset"",
+      ""value"": ""34280""
+    },
+    {
+      ""key"": ""kafka_partition"",
+      ""value"": ""0""
+    },
+    {
+      ""key"": ""kafka_timestamp"",
+      ""value"": ""1774272924619""
+    }
+  ]
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=13/ENL_Newsletter_Dev+0+0000034275.headers.json.gz
+12237,SYSTEM,2026-03-23 13:40:22.149,,,"{
+  ""blocks"": ""{\""meta\"":{\""version\"":\""\""},\""rootBlock\"":{\""id\"":\""6ixeduRK6j9CgQCXGx4dU7\"",\""type\"":\""EmailNewsletter\"",\""options\"":{},\""children\"":[]}}"",
+  ""category"": {
+    ""id"": ""d9e101d2-9408-4be7-8d4e-d13a88d891a9"",
+    ""name"": ""Monthly newsletter""
+  },
+  ""channels"": {
+    ""email"": {
+      ""domain"": ""dev.simpplr.xyz"",
+      ""sender_address"": ""noreply@dev.simpplr.xyz"",
+      ""type"": ""email""
+    },
+    ""intranet"": {
+      ""type"": ""intranet""
+    }
+  },
+  ""created_at"": ""2026-03-23T13:34:40.663Z"",
+  ""creator_id"": ""4f88649b-bfed-44b7-b077-d81339531382"",
+  ""id"": ""202a20ae-ba80-4d69-ad0f-46febe2e293c"",
+  ""is_archived"": false,
+  ""kafka_offset"": 34275,
+  ""kafka_partition"": 0,
+  ""kafka_timestamp"": 1774272888694,
+  ""message_ts"": null,
+  ""modified_at"": ""2026-03-23T13:34:40.663Z"",
+  ""modifier_id"": ""4f88649b-bfed-44b7-b077-d81339531382"",
+  ""name"": ""newsletter_test_category_details"",
+  ""recipients"": [
+    {
+      ""count"": 2,
+      ""id"": ""bfd989a7-62ec-43f8-808b-65e36b2f8375"",
+      ""name"": ""audience will be deleted"",
+      ""type"": ""audience""
+    }
+  ],
+  ""reply_to_address"": ""noreply@dev.simpplr.xyz"",
+  ""send_as_timezone_aware_schedule"": false,
+  ""status"": ""draft"",
+  ""subject"": """",
+  ""suppress_auto_replies"": true,
+  ""theme"": {
+    ""id"": ""72fc0bd1-4e3b-48c5-bfe7-fe01a858d9f2"",
+    ""name"": ""ENL ABAC - Dev""
+  }
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=13/ENL_Newsletter_Dev+0+0000034275.json.gz
+12238,SYSTEM,2026-03-23 13:40:22.149,,,"{
+  ""blocks"": ""{\""meta\"":{\""version\"":\""\""},\""rootBlock\"":{\""id\"":\""new\"",\""type\"":\""EmailNewsletter\"",\""options\"":{},\""children\"":[]}}"",
+  ""channels"": {
+    ""email"": {
+      ""domain"": ""dev.simpplr.xyz"",
+      ""sender_address"": ""noreply@dev.simpplr.xyz"",
+      ""type"": ""email""
+    },
+    ""intranet"": {
+      ""type"": ""intranet""
+    }
+  },
+  ""created_at"": ""2026-03-23T13:34:57.928Z"",
+  ""creator_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""id"": ""85db08a2-3579-49b8-b4a4-1d80fd9021a7"",
+  ""is_archived"": false,
+  ""kafka_offset"": 34276,
+  ""kafka_partition"": 0,
+  ""kafka_timestamp"": 1774272898306,
+  ""message_ts"": null,
+  ""modified_at"": ""2026-03-23T13:34:57.928Z"",
+  ""modifier_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""name"": ""Copy of test"",
+  ""recipients"": [
+    {
+      ""count"": 4,
+      ""id"": ""32d2063e-7230-4f3d-b3a7-262ae8ed4b8d"",
+      ""name"": ""Newsletter india"",
+      ""type"": ""audience""
+    }
+  ],
+  ""reply_to_address"": ""noreply@dev.simpplr.xyz"",
+  ""send_as_timezone_aware_schedule"": false,
+  ""status"": ""draft"",
+  ""subject"": ""test"",
+  ""suppress_auto_replies"": true,
+  ""template"": {
+    ""id"": ""7fb09d8d-953f-4c1a-882d-97e152d19808"",
+    ""name"": ""Blank template""
+  },
+  ""theme"": {
+    ""id"": ""cfe73014-ad57-4eaa-9aa0-1bceec68ac34"",
+    ""name"": ""default theme""
+  },
+  ""theme_blocks"": ""{\""meta\"":{},\""rootBlock\"":{\""type\"":\""EmailTemplate\"",\""id\"":\""v3nu4k4ASauPuAS5vbGeBB\"",\""options\"":{\""theme\"":\""custom\"",\""bgColor\"":\""#F3F3F3\"",\""frameTextColor\"":\""light\"",\""width\"":650,\""gutterSize\"":\""large\""},\""children\"":[{\""type\"":\""EmailHeader\"",\""id\"":\""headerBlock\"",\""options\"":{\""layout\"":\""layoutoption3\"",\""theme\"":\""custom\"",\""bgColor\"":\""#2B8D36\"",\""txtColor\"":\""#000000\"",\""logo\"":\""app\"",\""showLinks\"":true,\""logoFileUrl\"":null},\""children\"":[],\""data\"":{\""logoWidth\"":563,\""logoWeight\"":183}},{\""id\"":\""bodyColumn\"",\""type\"":\""EmailTemplateColumn\"",\""data\"":{},\""children\"":[]},{\""id\"":\""body\"",\""type\"":\""Slot\"",\""data\"":{\""name\"":\""bodySlot\""},\""children\"":[]},{\""type\"":\""SocialMediaLinks\"",\""id\"":\""footerBlock\"",\""options\"":{\""enabled\"":\""on\"",\""theme\"":\""dark\"",\""bgColor\"":\""#2B8D36\"",\""iconColor\"":\""light\"",\""linkedin\"":\""\"",\""facebook\"":\""\""},\""children\"":[]},{\""type\"":\""MobilePromotion\"",\""id\"":\""mobilePromotion\"",\""options\"":{\""showPromotion\"":\""default\""},\""children\"":[]},{\""id\"":\""footerText\"",\""type\"":\""RichText\"",\""data\"":{\""doc\"":{\""type\"":\""doc\"",\""content\"":[{\""type\"":\""paragraph\"",\""attrs\"":{\""textAlign\"":\""center\"",\""paragraphStyle\"":\""\""},\""content\"":[]}]}}}]}}""
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=13/ENL_Newsletter_Dev+0+0000034275.json.gz
+12239,SYSTEM,2026-03-23 13:40:22.149,,,"{
+  ""blocks"": ""{\""meta\"":{\""version\"":\""\""},\""rootBlock\"":{\""id\"":\""new\"",\""type\"":\""EmailNewsletter\"",\""options\"":{},\""children\"":[]}}"",
+  ""channels"": {
+    ""email"": {
+      ""domain"": ""dev.simpplr.xyz"",
+      ""sender_address"": ""noreply@dev.simpplr.xyz"",
+      ""type"": ""email""
+    },
+    ""intranet"": {
+      ""type"": ""intranet""
+    }
+  },
+  ""created_at"": ""2026-03-23T13:34:57.928Z"",
+  ""creator_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""id"": ""85db08a2-3579-49b8-b4a4-1d80fd9021a7"",
+  ""is_archived"": false,
+  ""kafka_offset"": 34277,
+  ""kafka_partition"": 0,
+  ""kafka_timestamp"": 1774272908935,
+  ""message_ts"": null,
+  ""modified_at"": ""2026-03-23T13:35:08.572Z"",
+  ""modifier_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""name"": ""Copy of test"",
+  ""recipients"": [
+    {
+      ""count"": 4,
+      ""id"": ""32d2063e-7230-4f3d-b3a7-262ae8ed4b8d"",
+      ""name"": ""Newsletter india"",
+      ""type"": ""audience""
+    }
+  ],
+  ""reply_to_address"": ""noreply@dev.simpplr.xyz"",
+  ""send_as_timezone_aware_schedule"": false,
+  ""status"": ""draft"",
+  ""subject"": ""test"",
+  ""suppress_auto_replies"": true,
+  ""template"": {
+    ""id"": ""7fb09d8d-953f-4c1a-882d-97e152d19808"",
+    ""name"": ""Blank template""
+  },
+  ""theme"": {
+    ""id"": ""cfe73014-ad57-4eaa-9aa0-1bceec68ac34"",
+    ""name"": ""default theme""
+  },
+  ""theme_blocks"": ""{\""meta\"":{},\""rootBlock\"":{\""type\"":\""EmailTemplate\"",\""id\"":\""v3nu4k4ASauPuAS5vbGeBB\"",\""options\"":{\""theme\"":\""custom\"",\""bgColor\"":\""#F3F3F3\"",\""frameTextColor\"":\""light\"",\""width\"":650,\""gutterSize\"":\""large\""},\""children\"":[{\""type\"":\""EmailHeader\"",\""id\"":\""headerBlock\"",\""options\"":{\""layout\"":\""layoutoption3\"",\""theme\"":\""custom\"",\""bgColor\"":\""#2B8D36\"",\""txtColor\"":\""#000000\"",\""logo\"":\""app\"",\""showLinks\"":true,\""logoFileUrl\"":null},\""children\"":[],\""data\"":{\""logoWidth\"":563,\""logoWeight\"":183}},{\""id\"":\""bodyColumn\"",\""type\"":\""EmailTemplateColumn\"",\""data\"":{},\""children\"":[]},{\""id\"":\""body\"",\""type\"":\""Slot\"",\""data\"":{\""name\"":\""bodySlot\""},\""children\"":[]},{\""type\"":\""SocialMediaLinks\"",\""id\"":\""footerBlock\"",\""options\"":{\""enabled\"":\""on\"",\""theme\"":\""dark\"",\""bgColor\"":\""#2B8D36\"",\""iconColor\"":\""light\"",\""linkedin\"":\""\"",\""facebook\"":\""\""},\""children\"":[]},{\""type\"":\""MobilePromotion\"",\""id\"":\""mobilePromotion\"",\""options\"":{\""showPromotion\"":\""default\""},\""children\"":[]},{\""id\"":\""footerText\"",\""type\"":\""RichText\"",\""data\"":{\""doc\"":{\""type\"":\""doc\"",\""content\"":[{\""type\"":\""paragraph\"",\""attrs\"":{\""textAlign\"":\""center\"",\""paragraphStyle\"":\""\""},\""content\"":[]}]}}}]}}""
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=13/ENL_Newsletter_Dev+0+0000034275.json.gz
+12240,SYSTEM,2026-03-23 13:40:22.149,,,"{
+  ""blocks"": ""{\""meta\"":{\""version\"":\""\""},\""rootBlock\"":{\""id\"":\""new\"",\""type\"":\""EmailNewsletter\"",\""options\"":{},\""children\"":[]}}"",
+  ""channels"": {
+    ""email"": {
+      ""domain"": ""dev.simpplr.xyz"",
+      ""sender_address"": ""noreply@dev.simpplr.xyz"",
+      ""type"": ""email""
+    },
+    ""intranet"": {
+      ""type"": ""intranet""
+    }
+  },
+  ""created_at"": ""2026-03-23T13:34:57.928Z"",
+  ""creator_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""id"": ""85db08a2-3579-49b8-b4a4-1d80fd9021a7"",
+  ""is_archived"": false,
+  ""kafka_offset"": 34278,
+  ""kafka_partition"": 0,
+  ""kafka_timestamp"": 1774272920066,
+  ""message_ts"": null,
+  ""modified_at"": ""2026-03-23T13:35:19.606Z"",
+  ""modifier_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""name"": ""Copy of test"",
+  ""recipients"": [
+    {
+      ""count"": 4,
+      ""id"": ""32d2063e-7230-4f3d-b3a7-262ae8ed4b8d"",
+      ""name"": ""Newsletter india"",
+      ""type"": ""audience""
+    }
+  ],
+  ""reply_to_address"": ""noreply@dev.simpplr.xyz"",
+  ""send_as_timezone_aware_schedule"": false,
+  ""status"": ""draft"",
+  ""subject"": ""Copy of test"",
+  ""suppress_auto_replies"": true,
+  ""template"": {
+    ""id"": ""7fb09d8d-953f-4c1a-882d-97e152d19808"",
+    ""name"": ""Blank template""
+  },
+  ""theme"": {
+    ""id"": ""cfe73014-ad57-4eaa-9aa0-1bceec68ac34"",
+    ""name"": ""default theme""
+  },
+  ""theme_blocks"": ""{\""meta\"":{},\""rootBlock\"":{\""type\"":\""EmailTemplate\"",\""id\"":\""v3nu4k4ASauPuAS5vbGeBB\"",\""options\"":{\""theme\"":\""custom\"",\""bgColor\"":\""#F3F3F3\"",\""frameTextColor\"":\""light\"",\""width\"":650,\""gutterSize\"":\""large\""},\""children\"":[{\""type\"":\""EmailHeader\"",\""id\"":\""headerBlock\"",\""options\"":{\""layout\"":\""layoutoption3\"",\""theme\"":\""custom\"",\""bgColor\"":\""#2B8D36\"",\""txtColor\"":\""#000000\"",\""logo\"":\""app\"",\""showLinks\"":true,\""logoFileUrl\"":null},\""children\"":[],\""data\"":{\""logoWidth\"":563,\""logoWeight\"":183}},{\""id\"":\""bodyColumn\"",\""type\"":\""EmailTemplateColumn\"",\""data\"":{},\""children\"":[]},{\""id\"":\""body\"",\""type\"":\""Slot\"",\""data\"":{\""name\"":\""bodySlot\""},\""children\"":[]},{\""type\"":\""SocialMediaLinks\"",\""id\"":\""footerBlock\"",\""options\"":{\""enabled\"":\""on\"",\""theme\"":\""dark\"",\""bgColor\"":\""#2B8D36\"",\""iconColor\"":\""light\"",\""linkedin\"":\""\"",\""facebook\"":\""\""},\""children\"":[]},{\""type\"":\""MobilePromotion\"",\""id\"":\""mobilePromotion\"",\""options\"":{\""showPromotion\"":\""default\""},\""children\"":[]},{\""id\"":\""footerText\"",\""type\"":\""RichText\"",\""data\"":{\""doc\"":{\""type\"":\""doc\"",\""content\"":[{\""type\"":\""paragraph\"",\""attrs\"":{\""textAlign\"":\""center\"",\""paragraphStyle\"":\""\""},\""content\"":[]}]}}}]}}""
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=13/ENL_Newsletter_Dev+0+0000034275.json.gz
+12241,SYSTEM,2026-03-23 13:40:22.149,,,"{
+  ""blocks"": ""{\""meta\"":{\""version\"":\""\""},\""rootBlock\"":{\""id\"":\""new\"",\""type\"":\""EmailNewsletter\"",\""options\"":{},\""children\"":[]}}"",
+  ""channels"": {
+    ""email"": {
+      ""domain"": ""dev.simpplr.xyz"",
+      ""sender_address"": ""noreply@dev.simpplr.xyz"",
+      ""type"": ""email""
+    },
+    ""intranet"": {
+      ""type"": ""intranet""
+    }
+  },
+  ""created_at"": ""2026-03-23T13:34:57.928Z"",
+  ""creator_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""id"": ""85db08a2-3579-49b8-b4a4-1d80fd9021a7"",
+  ""is_archived"": false,
+  ""kafka_offset"": 34279,
+  ""kafka_partition"": 0,
+  ""kafka_timestamp"": 1774272924619,
+  ""message_ts"": null,
+  ""modified_at"": ""2026-03-23T13:35:24.452Z"",
+  ""modifier_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""name"": ""Copy of test"",
+  ""recipients"": [
+    {
+      ""count"": 4,
+      ""id"": ""32d2063e-7230-4f3d-b3a7-262ae8ed4b8d"",
+      ""name"": ""Newsletter india"",
+      ""type"": ""audience""
+    }
+  ],
+  ""reply_to_address"": ""noreply@dev.simpplr.xyz"",
+  ""send_as_timezone_aware_schedule"": false,
+  ""send_at"": ""2026-03-23T13:35:24.384Z"",
+  ""status"": ""scheduled"",
+  ""subject"": ""Copy of test"",
+  ""suppress_auto_replies"": true,
+  ""template"": {
+    ""id"": ""7fb09d8d-953f-4c1a-882d-97e152d19808"",
+    ""name"": ""Blank template""
+  },
+  ""theme"": {
+    ""id"": ""cfe73014-ad57-4eaa-9aa0-1bceec68ac34"",
+    ""name"": ""default theme""
+  },
+  ""theme_blocks"": ""{\""meta\"":{},\""rootBlock\"":{\""type\"":\""EmailTemplate\"",\""id\"":\""v3nu4k4ASauPuAS5vbGeBB\"",\""options\"":{\""theme\"":\""custom\"",\""bgColor\"":\""#F3F3F3\"",\""frameTextColor\"":\""light\"",\""width\"":650,\""gutterSize\"":\""large\""},\""children\"":[{\""type\"":\""EmailHeader\"",\""id\"":\""headerBlock\"",\""options\"":{\""layout\"":\""layoutoption3\"",\""theme\"":\""custom\"",\""bgColor\"":\""#2B8D36\"",\""txtColor\"":\""#000000\"",\""logo\"":\""app\"",\""showLinks\"":true,\""logoFileUrl\"":null},\""children\"":[],\""data\"":{\""logoWidth\"":563,\""logoWeight\"":183}},{\""id\"":\""bodyColumn\"",\""type\"":\""EmailTemplateColumn\"",\""data\"":{},\""children\"":[]},{\""id\"":\""body\"",\""type\"":\""Slot\"",\""data\"":{\""name\"":\""bodySlot\""},\""children\"":[]},{\""type\"":\""SocialMediaLinks\"",\""id\"":\""footerBlock\"",\""options\"":{\""enabled\"":\""on\"",\""theme\"":\""dark\"",\""bgColor\"":\""#2B8D36\"",\""iconColor\"":\""light\"",\""linkedin\"":\""\"",\""facebook\"":\""\""},\""children\"":[]},{\""type\"":\""MobilePromotion\"",\""id\"":\""mobilePromotion\"",\""options\"":{\""showPromotion\"":\""default\""},\""children\"":[]},{\""id\"":\""footerText\"",\""type\"":\""RichText\"",\""data\"":{\""doc\"":{\""type\"":\""doc\"",\""content\"":[{\""type\"":\""paragraph\"",\""attrs\"":{\""textAlign\"":\""center\"",\""paragraphStyle\"":\""\""},\""content\"":[]}]}}}]}}""
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=13/ENL_Newsletter_Dev+0+0000034275.json.gz
+12242,SYSTEM,2026-03-23 13:40:22.149,,,"{
+  ""blocks"": ""{\""meta\"":{\""version\"":\""\""},\""rootBlock\"":{\""id\"":\""new\"",\""type\"":\""EmailNewsletter\"",\""options\"":{},\""children\"":[]}}"",
+  ""channels"": {
+    ""email"": {
+      ""domain"": ""dev.simpplr.xyz"",
+      ""sender_address"": ""noreply@dev.simpplr.xyz"",
+      ""type"": ""email""
+    },
+    ""intranet"": {
+      ""type"": ""intranet""
+    }
+  },
+  ""created_at"": ""2026-03-23T13:34:57.928Z"",
+  ""creator_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""id"": ""85db08a2-3579-49b8-b4a4-1d80fd9021a7"",
+  ""is_archived"": false,
+  ""kafka_offset"": 34280,
+  ""kafka_partition"": 0,
+  ""kafka_timestamp"": 1774272924619,
+  ""message_ts"": null,
+  ""modified_at"": ""2026-03-23T13:35:24.452Z"",
+  ""modifier_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""name"": ""Copy of test"",
+  ""recipients"": [
+    {
+      ""count"": 4,
+      ""id"": ""32d2063e-7230-4f3d-b3a7-262ae8ed4b8d"",
+      ""name"": ""Newsletter india"",
+      ""type"": ""audience""
+    }
+  ],
+  ""reply_to_address"": ""noreply@dev.simpplr.xyz"",
+  ""send_as_timezone_aware_schedule"": false,
+  ""send_at"": ""2026-03-23T13:35:24.384Z"",
+  ""status"": ""sending"",
+  ""subject"": ""Copy of test"",
+  ""suppress_auto_replies"": true,
+  ""template"": {
+    ""id"": ""7fb09d8d-953f-4c1a-882d-97e152d19808"",
+    ""name"": ""Blank template""
+  },
+  ""theme"": {
+    ""id"": ""cfe73014-ad57-4eaa-9aa0-1bceec68ac34"",
+    ""name"": ""default theme""
+  },
+  ""theme_blocks"": ""{\""meta\"":{},\""rootBlock\"":{\""type\"":\""EmailTemplate\"",\""id\"":\""v3nu4k4ASauPuAS5vbGeBB\"",\""options\"":{\""theme\"":\""custom\"",\""bgColor\"":\""#F3F3F3\"",\""frameTextColor\"":\""light\"",\""width\"":650,\""gutterSize\"":\""large\""},\""children\"":[{\""type\"":\""EmailHeader\"",\""id\"":\""headerBlock\"",\""options\"":{\""layout\"":\""layoutoption3\"",\""theme\"":\""custom\"",\""bgColor\"":\""#2B8D36\"",\""txtColor\"":\""#000000\"",\""logo\"":\""app\"",\""showLinks\"":true,\""logoFileUrl\"":null},\""children\"":[],\""data\"":{\""logoWidth\"":563,\""logoWeight\"":183}},{\""id\"":\""bodyColumn\"",\""type\"":\""EmailTemplateColumn\"",\""data\"":{},\""children\"":[]},{\""id\"":\""body\"",\""type\"":\""Slot\"",\""data\"":{\""name\"":\""bodySlot\""},\""children\"":[]},{\""type\"":\""SocialMediaLinks\"",\""id\"":\""footerBlock\"",\""options\"":{\""enabled\"":\""on\"",\""theme\"":\""dark\"",\""bgColor\"":\""#2B8D36\"",\""iconColor\"":\""light\"",\""linkedin\"":\""\"",\""facebook\"":\""\""},\""children\"":[]},{\""type\"":\""MobilePromotion\"",\""id\"":\""mobilePromotion\"",\""options\"":{\""showPromotion\"":\""default\""},\""children\"":[]},{\""id\"":\""footerText\"",\""type\"":\""RichText\"",\""data\"":{\""doc\"":{\""type\"":\""doc\"",\""content\"":[{\""type\"":\""paragraph\"",\""attrs\"":{\""textAlign\"":\""center\"",\""paragraphStyle\"":\""\""},\""content\"":[]}]}}}]}}""
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=13/ENL_Newsletter_Dev+0+0000034275.json.gz
+12261,SYSTEM,2026-03-23 14:20:28.758,,,"{
+  ""headers"": [
+    {
+      ""key"": ""id"",
+      ""value"": ""581f0687-2f97-41bc-bd8b-d6d12d65a92d""
+    },
+    {
+      ""key"": ""eventType"",
+      ""value"": ""NEWSLETTER_MODIFIED""
+    },
+    {
+      ""key"": ""aggregate_id"",
+      ""value"": ""94f48c73-617d-46a0-8edf-7b6a9936b053""
+    },
+    {
+      ""key"": ""tenant_info"",
+      ""value"": ""{\""accountId\"":\""586bea5e-0819-4b82-9462-adea5658eb47\""}""
+    },
+    {
+      ""key"": ""kafka_offset"",
+      ""value"": ""34285""
+    },
+    {
+      ""key"": ""kafka_partition"",
+      ""value"": ""0""
+    },
+    {
+      ""key"": ""kafka_timestamp"",
+      ""value"": ""1774275485733""
+    }
+  ]
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=14/ENL_Newsletter_Dev+0+0000034285.headers.json.gz
+12252,SYSTEM,2026-03-23 14:10:21.888,,,"{
+  ""headers"": [
+    {
+      ""key"": ""id"",
+      ""value"": ""863953de-f5f4-4847-abc3-175a79905ae3""
+    },
+    {
+      ""key"": ""eventType"",
+      ""value"": ""NEWSLETTER_CREATED""
+    },
+    {
+      ""key"": ""aggregate_id"",
+      ""value"": ""94f48c73-617d-46a0-8edf-7b6a9936b053""
+    },
+    {
+      ""key"": ""tenant_info"",
+      ""value"": ""{\""accountId\"":\""586bea5e-0819-4b82-9462-adea5658eb47\""}""
+    },
+    {
+      ""key"": ""kafka_offset"",
+      ""value"": ""34282""
+    },
+    {
+      ""key"": ""kafka_partition"",
+      ""value"": ""0""
+    },
+    {
+      ""key"": ""kafka_timestamp"",
+      ""value"": ""1774274870256""
+    }
+  ]
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=14/ENL_Newsletter_Dev+0+0000034282.headers.json.gz
+12253,SYSTEM,2026-03-23 14:10:21.888,,,"{
+  ""headers"": [
+    {
+      ""key"": ""id"",
+      ""value"": ""e26eb89a-c2d5-466e-8c43-b484c94a1781""
+    },
+    {
+      ""key"": ""eventType"",
+      ""value"": ""NEWSLETTER_MODIFIED""
+    },
+    {
+      ""key"": ""aggregate_id"",
+      ""value"": ""94f48c73-617d-46a0-8edf-7b6a9936b053""
+    },
+    {
+      ""key"": ""tenant_info"",
+      ""value"": ""{\""accountId\"":\""586bea5e-0819-4b82-9462-adea5658eb47\""}""
+    },
+    {
+      ""key"": ""kafka_offset"",
+      ""value"": ""34283""
+    },
+    {
+      ""key"": ""kafka_partition"",
+      ""value"": ""0""
+    },
+    {
+      ""key"": ""kafka_timestamp"",
+      ""value"": ""1774274883405""
+    }
+  ]
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=14/ENL_Newsletter_Dev+0+0000034282.headers.json.gz
+12254,SYSTEM,2026-03-23 14:10:21.888,,,"{
+  ""headers"": [
+    {
+      ""key"": ""id"",
+      ""value"": ""4731cded-49aa-4e5d-a4d8-d5a090d0eba7""
+    },
+    {
+      ""key"": ""eventType"",
+      ""value"": ""NEWSLETTER_MODIFIED""
+    },
+    {
+      ""key"": ""aggregate_id"",
+      ""value"": ""94f48c73-617d-46a0-8edf-7b6a9936b053""
+    },
+    {
+      ""key"": ""tenant_info"",
+      ""value"": ""{\""accountId\"":\""586bea5e-0819-4b82-9462-adea5658eb47\""}""
+    },
+    {
+      ""key"": ""kafka_offset"",
+      ""value"": ""34284""
+    },
+    {
+      ""key"": ""kafka_partition"",
+      ""value"": ""0""
+    },
+    {
+      ""key"": ""kafka_timestamp"",
+      ""value"": ""1774274898579""
+    }
+  ]
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=14/ENL_Newsletter_Dev+0+0000034282.headers.json.gz
+12255,SYSTEM,2026-03-23 14:10:21.888,,,"{
+  ""blocks"": ""{\""meta\"":{\""version\"":\""\""},\""rootBlock\"":{\""id\"":\""new\"",\""type\"":\""EmailNewsletter\"",\""options\"":{},\""children\"":[]}}"",
+  ""channels"": {
+    ""email"": {
+      ""domain"": ""dev.simpplr.xyz"",
+      ""sender_address"": ""noreply@dev.simpplr.xyz"",
+      ""type"": ""email""
+    },
+    ""intranet"": {
+      ""type"": ""intranet""
+    }
+  },
+  ""created_at"": ""2026-03-23T14:07:49.902Z"",
+  ""creator_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""id"": ""94f48c73-617d-46a0-8edf-7b6a9936b053"",
+  ""is_archived"": false,
+  ""kafka_offset"": 34282,
+  ""kafka_partition"": 0,
+  ""kafka_timestamp"": 1774274870256,
+  ""message_ts"": null,
+  ""modified_at"": ""2026-03-23T14:07:49.902Z"",
+  ""modifier_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""name"": ""Copy of Copy of test"",
+  ""recipients"": [
+    {
+      ""count"": 4,
+      ""id"": ""32d2063e-7230-4f3d-b3a7-262ae8ed4b8d"",
+      ""name"": ""Newsletter india"",
+      ""type"": ""audience""
+    }
+  ],
+  ""reply_to_address"": ""noreply@dev.simpplr.xyz"",
+  ""send_as_timezone_aware_schedule"": false,
+  ""status"": ""draft"",
+  ""subject"": ""Copy of test"",
+  ""suppress_auto_replies"": true,
+  ""template"": {
+    ""id"": ""7fb09d8d-953f-4c1a-882d-97e152d19808"",
+    ""name"": ""Blank template""
+  },
+  ""theme"": {
+    ""id"": ""cfe73014-ad57-4eaa-9aa0-1bceec68ac34"",
+    ""name"": ""default theme""
+  },
+  ""theme_blocks"": ""{\""meta\"":{},\""rootBlock\"":{\""type\"":\""EmailTemplate\"",\""id\"":\""v3nu4k4ASauPuAS5vbGeBB\"",\""options\"":{\""theme\"":\""custom\"",\""bgColor\"":\""#F3F3F3\"",\""frameTextColor\"":\""light\"",\""width\"":650,\""gutterSize\"":\""large\""},\""children\"":[{\""type\"":\""EmailHeader\"",\""id\"":\""headerBlock\"",\""options\"":{\""layout\"":\""layoutoption3\"",\""theme\"":\""custom\"",\""bgColor\"":\""#2B8D36\"",\""txtColor\"":\""#000000\"",\""logo\"":\""app\"",\""showLinks\"":true,\""logoFileUrl\"":null},\""children\"":[],\""data\"":{\""logoWidth\"":563,\""logoWeight\"":183}},{\""id\"":\""bodyColumn\"",\""type\"":\""EmailTemplateColumn\"",\""data\"":{},\""children\"":[]},{\""id\"":\""body\"",\""type\"":\""Slot\"",\""data\"":{\""name\"":\""bodySlot\""},\""children\"":[]},{\""type\"":\""SocialMediaLinks\"",\""id\"":\""footerBlock\"",\""options\"":{\""enabled\"":\""on\"",\""theme\"":\""dark\"",\""bgColor\"":\""#2B8D36\"",\""iconColor\"":\""light\"",\""linkedin\"":\""\"",\""facebook\"":\""\""},\""children\"":[]},{\""type\"":\""MobilePromotion\"",\""id\"":\""mobilePromotion\"",\""options\"":{\""showPromotion\"":\""default\""},\""children\"":[]},{\""id\"":\""footerText\"",\""type\"":\""RichText\"",\""data\"":{\""doc\"":{\""type\"":\""doc\"",\""content\"":[{\""type\"":\""paragraph\"",\""attrs\"":{\""textAlign\"":\""center\"",\""paragraphStyle\"":\""\""},\""content\"":[]}]}}}]}}""
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=14/ENL_Newsletter_Dev+0+0000034282.json.gz
+12256,SYSTEM,2026-03-23 14:10:21.888,,,"{
+  ""blocks"": ""{\""meta\"":{\""version\"":\""\""},\""rootBlock\"":{\""id\"":\""new\"",\""type\"":\""EmailNewsletter\"",\""options\"":{},\""children\"":[]}}"",
+  ""channels"": {
+    ""email"": {
+      ""domain"": ""dev.simpplr.xyz"",
+      ""sender_address"": ""noreply@dev.simpplr.xyz"",
+      ""type"": ""email""
+    },
+    ""intranet"": {
+      ""type"": ""intranet""
+    }
+  },
+  ""created_at"": ""2026-03-23T14:07:49.902Z"",
+  ""creator_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""id"": ""94f48c73-617d-46a0-8edf-7b6a9936b053"",
+  ""is_archived"": false,
+  ""kafka_offset"": 34283,
+  ""kafka_partition"": 0,
+  ""kafka_timestamp"": 1774274883405,
+  ""message_ts"": null,
+  ""modified_at"": ""2026-03-23T14:08:03.144Z"",
+  ""modifier_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""name"": ""Copy of Copy of test"",
+  ""recipients"": [
+    {
+      ""count"": 4,
+      ""id"": ""32d2063e-7230-4f3d-b3a7-262ae8ed4b8d"",
+      ""name"": ""Newsletter india"",
+      ""type"": ""audience""
+    }
+  ],
+  ""reply_to_address"": ""noreply@dev.simpplr.xyz"",
+  ""send_as_timezone_aware_schedule"": false,
+  ""status"": ""draft"",
+  ""subject"": ""Copy of test"",
+  ""suppress_auto_replies"": true,
+  ""template"": {
+    ""id"": ""7fb09d8d-953f-4c1a-882d-97e152d19808"",
+    ""name"": ""Blank template""
+  },
+  ""theme"": {
+    ""id"": ""cfe73014-ad57-4eaa-9aa0-1bceec68ac34"",
+    ""name"": ""default theme""
+  },
+  ""theme_blocks"": ""{\""meta\"":{},\""rootBlock\"":{\""type\"":\""EmailTemplate\"",\""id\"":\""v3nu4k4ASauPuAS5vbGeBB\"",\""options\"":{\""theme\"":\""custom\"",\""bgColor\"":\""#F3F3F3\"",\""frameTextColor\"":\""light\"",\""width\"":650,\""gutterSize\"":\""large\""},\""children\"":[{\""type\"":\""EmailHeader\"",\""id\"":\""headerBlock\"",\""options\"":{\""layout\"":\""layoutoption3\"",\""theme\"":\""custom\"",\""bgColor\"":\""#2B8D36\"",\""txtColor\"":\""#000000\"",\""logo\"":\""app\"",\""showLinks\"":true,\""logoFileUrl\"":null},\""children\"":[],\""data\"":{\""logoWidth\"":563,\""logoWeight\"":183}},{\""id\"":\""bodyColumn\"",\""type\"":\""EmailTemplateColumn\"",\""data\"":{},\""children\"":[]},{\""id\"":\""body\"",\""type\"":\""Slot\"",\""data\"":{\""name\"":\""bodySlot\""},\""children\"":[]},{\""type\"":\""SocialMediaLinks\"",\""id\"":\""footerBlock\"",\""options\"":{\""enabled\"":\""on\"",\""theme\"":\""dark\"",\""bgColor\"":\""#2B8D36\"",\""iconColor\"":\""light\"",\""linkedin\"":\""\"",\""facebook\"":\""\""},\""children\"":[]},{\""type\"":\""MobilePromotion\"",\""id\"":\""mobilePromotion\"",\""options\"":{\""showPromotion\"":\""default\""},\""children\"":[]},{\""id\"":\""footerText\"",\""type\"":\""RichText\"",\""data\"":{\""doc\"":{\""type\"":\""doc\"",\""content\"":[{\""type\"":\""paragraph\"",\""attrs\"":{\""textAlign\"":\""center\"",\""paragraphStyle\"":\""\""},\""content\"":[]}]}}}]}}""
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=14/ENL_Newsletter_Dev+0+0000034282.json.gz
+12257,SYSTEM,2026-03-23 14:10:21.888,,,"{
+  ""blocks"": ""{\""meta\"":{\""version\"":\""\""},\""rootBlock\"":{\""id\"":\""new\"",\""type\"":\""EmailNewsletter\"",\""options\"":{},\""children\"":[]}}"",
+  ""channels"": {
+    ""email"": {
+      ""domain"": ""dev.simpplr.xyz"",
+      ""sender_address"": ""noreply@dev.simpplr.xyz"",
+      ""type"": ""email""
+    },
+    ""intranet"": {
+      ""type"": ""intranet""
+    }
+  },
+  ""created_at"": ""2026-03-23T14:07:49.902Z"",
+  ""creator_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""id"": ""94f48c73-617d-46a0-8edf-7b6a9936b053"",
+  ""is_archived"": false,
+  ""kafka_offset"": 34284,
+  ""kafka_partition"": 0,
+  ""kafka_timestamp"": 1774274898579,
+  ""message_ts"": null,
+  ""modified_at"": ""2026-03-23T14:08:18.399Z"",
+  ""modifier_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""name"": ""Copy of Copy of test"",
+  ""recipients"": [
+    {
+      ""count"": 4,
+      ""id"": ""32d2063e-7230-4f3d-b3a7-262ae8ed4b8d"",
+      ""name"": ""Newsletter india"",
+      ""type"": ""audience""
+    }
+  ],
+  ""reply_to_address"": ""noreply@dev.simpplr.xyz"",
+  ""send_as_timezone_aware_schedule"": false,
+  ""status"": ""draft"",
+  ""subject"": ""Copy of Copy of test"",
+  ""suppress_auto_replies"": true,
+  ""template"": {
+    ""id"": ""7fb09d8d-953f-4c1a-882d-97e152d19808"",
+    ""name"": ""Blank template""
+  },
+  ""theme"": {
+    ""id"": ""cfe73014-ad57-4eaa-9aa0-1bceec68ac34"",
+    ""name"": ""default theme""
+  },
+  ""theme_blocks"": ""{\""meta\"":{},\""rootBlock\"":{\""type\"":\""EmailTemplate\"",\""id\"":\""v3nu4k4ASauPuAS5vbGeBB\"",\""options\"":{\""theme\"":\""custom\"",\""bgColor\"":\""#F3F3F3\"",\""frameTextColor\"":\""light\"",\""width\"":650,\""gutterSize\"":\""large\""},\""children\"":[{\""type\"":\""EmailHeader\"",\""id\"":\""headerBlock\"",\""options\"":{\""layout\"":\""layoutoption3\"",\""theme\"":\""custom\"",\""bgColor\"":\""#2B8D36\"",\""txtColor\"":\""#000000\"",\""logo\"":\""app\"",\""showLinks\"":true,\""logoFileUrl\"":null},\""children\"":[],\""data\"":{\""logoWidth\"":563,\""logoWeight\"":183}},{\""id\"":\""bodyColumn\"",\""type\"":\""EmailTemplateColumn\"",\""data\"":{},\""children\"":[]},{\""id\"":\""body\"",\""type\"":\""Slot\"",\""data\"":{\""name\"":\""bodySlot\""},\""children\"":[]},{\""type\"":\""SocialMediaLinks\"",\""id\"":\""footerBlock\"",\""options\"":{\""enabled\"":\""on\"",\""theme\"":\""dark\"",\""bgColor\"":\""#2B8D36\"",\""iconColor\"":\""light\"",\""linkedin\"":\""\"",\""facebook\"":\""\""},\""children\"":[]},{\""type\"":\""MobilePromotion\"",\""id\"":\""mobilePromotion\"",\""options\"":{\""showPromotion\"":\""default\""},\""children\"":[]},{\""id\"":\""footerText\"",\""type\"":\""RichText\"",\""data\"":{\""doc\"":{\""type\"":\""doc\"",\""content\"":[{\""type\"":\""paragraph\"",\""attrs\"":{\""textAlign\"":\""center\"",\""paragraphStyle\"":\""\""},\""content\"":[]}]}}}]}}""
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=14/ENL_Newsletter_Dev+0+0000034282.json.gz
+12270,SYSTEM,2026-03-23 14:30:10.275,,,"{
+  ""headers"": [
+    {
+      ""key"": ""id"",
+      ""value"": ""42793457-5f48-44ee-aae7-2f1fa65c36ac""
+    },
+    {
+      ""key"": ""eventType"",
+      ""value"": ""NEWSLETTER_MODIFIED""
+    },
+    {
+      ""key"": ""aggregate_id"",
+      ""value"": ""4c12c144-4655-4d76-9f45-1097ded1e0ca""
+    },
+    {
+      ""key"": ""tenant_info"",
+      ""value"": ""{\""accountId\"":\""13b20301-57c3-440b-9704-73ccbe15dac3\""}""
+    },
+    {
+      ""key"": ""kafka_offset"",
+      ""value"": ""34288""
+    },
+    {
+      ""key"": ""kafka_partition"",
+      ""value"": ""0""
+    },
+    {
+      ""key"": ""kafka_timestamp"",
+      ""value"": ""1774275812625""
+    }
+  ]
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=14/ENL_Newsletter_Dev+0+0000034288.headers.json.gz
+12271,SYSTEM,2026-03-23 14:30:10.275,,,"{
+  ""blocks"": ""{\""meta\"":{\""version\"":\""\""},\""rootBlock\"":{\""id\"":\""new\"",\""type\"":\""EmailNewsletter\"",\""options\"":{},\""children\"":[{\""id\"":\""block-r1ad2ZVCtcBL32kgLZn5i7\"",\""type\"":\""Recognition\"",\""style\"":{},\""loading\"":false,\""options\"":{\""type\"":\""all\"",\""filter\"":\""latest\"",\""source\"":\""all\"",\""itemCount\"":3},\""children\"":[]}]}}"",
+  ""channels"": {
+    ""email"": {
+      ""domain"": ""dev.simpplr.xyz"",
+      ""sender_address"": ""noreply@dev.simpplr.xyz"",
+      ""type"": ""email""
+    },
+    ""intranet"": {
+      ""type"": ""intranet""
+    }
+  },
+  ""created_at"": ""2026-03-23T11:54:57.320Z"",
+  ""creator_id"": ""4f747d0f-aa04-45e7-8af0-70a9266b56b2"",
+  ""id"": ""4c12c144-4655-4d76-9f45-1097ded1e0ca"",
+  ""is_archived"": false,
+  ""kafka_offset"": 34288,
+  ""kafka_partition"": 0,
+  ""kafka_timestamp"": 1774275812625,
+  ""message_ts"": null,
+  ""modified_at"": ""2026-03-23T14:23:32.128Z"",
+  ""modifier_id"": ""4f747d0f-aa04-45e7-8af0-70a9266b56b2"",
+  ""name"": ""Abhishek"",
+  ""preview_text"": ""sfsdf"",
+  ""recipients"": [
+    {
+      ""count"": 2,
+      ""id"": ""ed8647bb-7b33-48dd-9ae2-f1ee15abb4ba"",
+      ""name"": ""testing audinece"",
+      ""type"": ""audience""
+    }
+  ],
+  ""reply_to_address"": ""noreply@dev.simpplr.xyz"",
+  ""send_as_timezone_aware_schedule"": false,
+  ""send_at"": ""2026-03-23T11:55:59.768Z"",
+  ""status"": ""onHold"",
+  ""subject"": ""fddsfdsf"",
+  ""suppress_auto_replies"": true,
+  ""template"": {
+    ""id"": ""2f0a3c2e-7e3b-49da-96e0-7c5b105f0a70"",
+    ""name"": ""Blank template""
+  },
+  ""theme"": {
+    ""id"": ""955527c0-4484-4618-8c61-318d15212696"",
+    ""name"": ""RecognitionDev""
+  },
+  ""theme_blocks"": ""{\""meta\"":{},\""rootBlock\"":{\""type\"":\""EmailTemplate\"",\""id\"":\""new\"",\""options\"":{\""theme\"":\""app_branding\"",\""width\"":650,\""gutterSize\"":\""large\""},\""children\"":[{\""type\"":\""EmailHeader\"",\""id\"":\""headerBlock\"",\""options\"":{\""layout\"":\""layoutoption1\"",\""theme\"":\""app_branding\"",\""bgColor\"":\""#F3F3F3\"",\""txtColor\"":\""#000000\"",\""logo\"":\""app\"",\""showLinks\"":true},\""children\"":[]},{\""id\"":\""bodyColumn\"",\""type\"":\""EmailTemplateColumn\"",\""data\"":{},\""children\"":[]},{\""id\"":\""body\"",\""type\"":\""Slot\"",\""data\"":{\""name\"":\""bodySlot\""},\""children\"":[]},{\""type\"":\""SocialMediaLinks\"",\""id\"":\""footerBlock\"",\""options\"":{\""enabled\"":\""off\"",\""theme\"":\""app_branding\"",\""bgColor\"":\""#000000\"",\""iconColor\"":\""light\""},\""children\"":[]},{\""type\"":\""MobilePromotion\"",\""id\"":\""mobilePromotion\"",\""options\"":{\""showPromotion\"":\""enable\""},\""children\"":[]}]}}""
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=14/ENL_Newsletter_Dev+0+0000034288.json.gz
+12249,SYSTEM,2026-03-23 14:00:20.037,,,"{
+  ""headers"": [
+    {
+      ""key"": ""id"",
+      ""value"": ""3a1df4c2-5029-4d1d-82c4-5afee604cc73""
+    },
+    {
+      ""key"": ""eventType"",
+      ""value"": ""NEWSLETTER_MODIFIED""
+    },
+    {
+      ""key"": ""aggregate_id"",
+      ""value"": ""85db08a2-3579-49b8-b4a4-1d80fd9021a7""
+    },
+    {
+      ""key"": ""tenant_info"",
+      ""value"": ""{\""accountId\"":\""586bea5e-0819-4b82-9462-adea5658eb47\""}""
+    },
+    {
+      ""key"": ""kafka_offset"",
+      ""value"": ""34281""
+    },
+    {
+      ""key"": ""kafka_partition"",
+      ""value"": ""0""
+    },
+    {
+      ""key"": ""kafka_timestamp"",
+      ""value"": ""1774273824795""
+    }
+  ]
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=13/ENL_Newsletter_Dev+0+0000034281.headers.json.gz
+12250,SYSTEM,2026-03-23 14:00:20.037,,,"{
+  ""blocks"": ""{\""meta\"":{\""version\"":\""\""},\""rootBlock\"":{\""id\"":\""new\"",\""type\"":\""EmailNewsletter\"",\""options\"":{},\""children\"":[]}}"",
+  ""channels"": {
+    ""email"": {
+      ""domain"": ""dev.simpplr.xyz"",
+      ""sender_address"": ""noreply@dev.simpplr.xyz"",
+      ""type"": ""email""
+    },
+    ""intranet"": {
+      ""type"": ""intranet""
+    }
+  },
+  ""created_at"": ""2026-03-23T13:34:57.928Z"",
+  ""creator_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""id"": ""85db08a2-3579-49b8-b4a4-1d80fd9021a7"",
+  ""is_archived"": false,
+  ""kafka_offset"": 34281,
+  ""kafka_partition"": 0,
+  ""kafka_timestamp"": 1774273824795,
+  ""message_ts"": null,
+  ""modified_at"": ""2026-03-23T13:50:24.703Z"",
+  ""modifier_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""name"": ""Copy of test"",
+  ""recipients"": [
+    {
+      ""count"": 4,
+      ""id"": ""32d2063e-7230-4f3d-b3a7-262ae8ed4b8d"",
+      ""name"": ""Newsletter india"",
+      ""type"": ""audience""
+    }
+  ],
+  ""reply_to_address"": ""noreply@dev.simpplr.xyz"",
+  ""send_as_timezone_aware_schedule"": false,
+  ""send_at"": ""2026-03-23T13:35:24.384Z"",
+  ""status"": ""onHold"",
+  ""subject"": ""Copy of test"",
+  ""suppress_auto_replies"": true,
+  ""template"": {
+    ""id"": ""7fb09d8d-953f-4c1a-882d-97e152d19808"",
+    ""name"": ""Blank template""
+  },
+  ""theme"": {
+    ""id"": ""cfe73014-ad57-4eaa-9aa0-1bceec68ac34"",
+    ""name"": ""default theme""
+  },
+  ""theme_blocks"": ""{\""meta\"":{},\""rootBlock\"":{\""type\"":\""EmailTemplate\"",\""id\"":\""v3nu4k4ASauPuAS5vbGeBB\"",\""options\"":{\""theme\"":\""custom\"",\""bgColor\"":\""#F3F3F3\"",\""frameTextColor\"":\""light\"",\""width\"":650,\""gutterSize\"":\""large\""},\""children\"":[{\""type\"":\""EmailHeader\"",\""id\"":\""headerBlock\"",\""options\"":{\""layout\"":\""layoutoption3\"",\""theme\"":\""custom\"",\""bgColor\"":\""#2B8D36\"",\""txtColor\"":\""#000000\"",\""logo\"":\""app\"",\""showLinks\"":true,\""logoFileUrl\"":null},\""children\"":[],\""data\"":{\""logoWidth\"":563,\""logoWeight\"":183}},{\""id\"":\""bodyColumn\"",\""type\"":\""EmailTemplateColumn\"",\""data\"":{},\""children\"":[]},{\""id\"":\""body\"",\""type\"":\""Slot\"",\""data\"":{\""name\"":\""bodySlot\""},\""children\"":[]},{\""type\"":\""SocialMediaLinks\"",\""id\"":\""footerBlock\"",\""options\"":{\""enabled\"":\""on\"",\""theme\"":\""dark\"",\""bgColor\"":\""#2B8D36\"",\""iconColor\"":\""light\"",\""linkedin\"":\""\"",\""facebook\"":\""\""},\""children\"":[]},{\""type\"":\""MobilePromotion\"",\""id\"":\""mobilePromotion\"",\""options\"":{\""showPromotion\"":\""default\""},\""children\"":[]},{\""id\"":\""footerText\"",\""type\"":\""RichText\"",\""data\"":{\""doc\"":{\""type\"":\""doc\"",\""content\"":[{\""type\"":\""paragraph\"",\""attrs\"":{\""textAlign\"":\""center\"",\""paragraphStyle\"":\""\""},\""content\"":[]}]}}}]}}""
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=13/ENL_Newsletter_Dev+0+0000034281.json.gz
+12273,SYSTEM,2026-03-23 14:40:39.183,,,"{
+  ""headers"": [
+    {
+      ""key"": ""id"",
+      ""value"": ""110cc48b-2b0a-4f60-8deb-49b13b0107bf""
+    },
+    {
+      ""key"": ""eventType"",
+      ""value"": ""NEWSLETTER_MODIFIED""
+    },
+    {
+      ""key"": ""aggregate_id"",
+      ""value"": ""94f48c73-617d-46a0-8edf-7b6a9936b053""
+    },
+    {
+      ""key"": ""tenant_info"",
+      ""value"": ""{\""accountId\"":\""586bea5e-0819-4b82-9462-adea5658eb47\""}""
+    },
+    {
+      ""key"": ""kafka_offset"",
+      ""value"": ""34289""
+    },
+    {
+      ""key"": ""kafka_partition"",
+      ""value"": ""0""
+    },
+    {
+      ""key"": ""kafka_timestamp"",
+      ""value"": ""1774276204708""
+    }
+  ]
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=14/ENL_Newsletter_Dev+0+0000034289.headers.json.gz
+12274,SYSTEM,2026-03-23 14:40:39.183,,,"{
+  ""headers"": [
+    {
+      ""key"": ""id"",
+      ""value"": ""c910da7f-8843-43d5-87c6-d714a5163a52""
+    },
+    {
+      ""key"": ""eventType"",
+      ""value"": ""NEWSLETTER_MODIFIED""
+    },
+    {
+      ""key"": ""aggregate_id"",
+      ""value"": ""94f48c73-617d-46a0-8edf-7b6a9936b053""
+    },
+    {
+      ""key"": ""tenant_info"",
+      ""value"": ""{\""accountId\"":\""586bea5e-0819-4b82-9462-adea5658eb47\""}""
+    },
+    {
+      ""key"": ""kafka_offset"",
+      ""value"": ""34290""
+    },
+    {
+      ""key"": ""kafka_partition"",
+      ""value"": ""0""
+    },
+    {
+      ""key"": ""kafka_timestamp"",
+      ""value"": ""1774276209279""
+    }
+  ]
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=14/ENL_Newsletter_Dev+0+0000034289.headers.json.gz
+12275,SYSTEM,2026-03-23 14:40:39.183,,,"{
+  ""blocks"": ""{\""meta\"":{\""version\"":\""\""},\""rootBlock\"":{\""id\"":\""new\"",\""type\"":\""EmailNewsletter\"",\""options\"":{},\""children\"":[]}}"",
+  ""channels"": {
+    ""email"": {
+      ""domain"": ""dev.simpplr.xyz"",
+      ""sender_address"": ""noreply@dev.simpplr.xyz"",
+      ""type"": ""email""
+    },
+    ""intranet"": {
+      ""type"": ""intranet""
+    }
+  },
+  ""created_at"": ""2026-03-23T14:07:49.902Z"",
+  ""creator_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""id"": ""94f48c73-617d-46a0-8edf-7b6a9936b053"",
+  ""is_archived"": false,
+  ""kafka_offset"": 34289,
+  ""kafka_partition"": 0,
+  ""kafka_timestamp"": 1774276204708,
+  ""message_ts"": null,
+  ""modified_at"": ""2026-03-23T14:30:02.883Z"",
+  ""modifier_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""name"": ""Copy of Copy of test"",
+  ""recipients"": [
+    {
+      ""count"": 4,
+      ""id"": ""32d2063e-7230-4f3d-b3a7-262ae8ed4b8d"",
+      ""name"": ""Newsletter india"",
+      ""type"": ""audience""
+    }
+  ],
+  ""reply_to_address"": ""noreply@dev.simpplr.xyz"",
+  ""send_as_timezone_aware_schedule"": false,
+  ""send_at"": ""2026-03-23T14:29:58.804Z"",
+  ""status"": ""scheduled"",
+  ""subject"": ""Copy of Copy of test"",
+  ""suppress_auto_replies"": true,
+  ""template"": {
+    ""id"": ""7fb09d8d-953f-4c1a-882d-97e152d19808"",
+    ""name"": ""Blank template""
+  },
+  ""theme"": {
+    ""id"": ""cfe73014-ad57-4eaa-9aa0-1bceec68ac34"",
+    ""name"": ""default theme""
+  },
+  ""theme_blocks"": ""{\""meta\"":{},\""rootBlock\"":{\""type\"":\""EmailTemplate\"",\""id\"":\""v3nu4k4ASauPuAS5vbGeBB\"",\""options\"":{\""theme\"":\""custom\"",\""bgColor\"":\""#F3F3F3\"",\""frameTextColor\"":\""light\"",\""width\"":650,\""gutterSize\"":\""large\""},\""children\"":[{\""type\"":\""EmailHeader\"",\""id\"":\""headerBlock\"",\""options\"":{\""layout\"":\""layoutoption3\"",\""theme\"":\""custom\"",\""bgColor\"":\""#2B8D36\"",\""txtColor\"":\""#000000\"",\""logo\"":\""app\"",\""showLinks\"":true,\""logoFileUrl\"":null},\""children\"":[],\""data\"":{\""logoWidth\"":563,\""logoWeight\"":183}},{\""id\"":\""bodyColumn\"",\""type\"":\""EmailTemplateColumn\"",\""data\"":{},\""children\"":[]},{\""id\"":\""body\"",\""type\"":\""Slot\"",\""data\"":{\""name\"":\""bodySlot\""},\""children\"":[]},{\""type\"":\""SocialMediaLinks\"",\""id\"":\""footerBlock\"",\""options\"":{\""enabled\"":\""on\"",\""theme\"":\""dark\"",\""bgColor\"":\""#2B8D36\"",\""iconColor\"":\""light\"",\""linkedin\"":\""\"",\""facebook\"":\""\""},\""children\"":[]},{\""type\"":\""MobilePromotion\"",\""id\"":\""mobilePromotion\"",\""options\"":{\""showPromotion\"":\""default\""},\""children\"":[]},{\""id\"":\""footerText\"",\""type\"":\""RichText\"",\""data\"":{\""doc\"":{\""type\"":\""doc\"",\""content\"":[{\""type\"":\""paragraph\"",\""attrs\"":{\""textAlign\"":\""center\"",\""paragraphStyle\"":\""\""},\""content\"":[]}]}}}]}}""
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=14/ENL_Newsletter_Dev+0+0000034289.json.gz
+12276,SYSTEM,2026-03-23 14:40:39.183,,,"{
+  ""blocks"": ""{\""meta\"":{\""version\"":\""\""},\""rootBlock\"":{\""id\"":\""new\"",\""type\"":\""EmailNewsletter\"",\""options\"":{},\""children\"":[]}}"",
+  ""channels"": {
+    ""email"": {
+      ""domain"": ""dev.simpplr.xyz"",
+      ""sender_address"": ""noreply@dev.simpplr.xyz"",
+      ""type"": ""email""
+    },
+    ""intranet"": {
+      ""type"": ""intranet""
+    }
+  },
+  ""created_at"": ""2026-03-23T14:07:49.902Z"",
+  ""creator_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""id"": ""94f48c73-617d-46a0-8edf-7b6a9936b053"",
+  ""is_archived"": false,
+  ""kafka_offset"": 34290,
+  ""kafka_partition"": 0,
+  ""kafka_timestamp"": 1774276209279,
+  ""message_ts"": null,
+  ""modified_at"": ""2026-03-23T14:30:02.883Z"",
+  ""modifier_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""name"": ""Copy of Copy of test"",
+  ""recipients"": [
+    {
+      ""count"": 4,
+      ""id"": ""32d2063e-7230-4f3d-b3a7-262ae8ed4b8d"",
+      ""name"": ""Newsletter india"",
+      ""type"": ""audience""
+    }
+  ],
+  ""reply_to_address"": ""noreply@dev.simpplr.xyz"",
+  ""send_as_timezone_aware_schedule"": false,
+  ""send_at"": ""2026-03-23T14:29:58.804Z"",
+  ""status"": ""sending"",
+  ""subject"": ""Copy of Copy of test"",
+  ""suppress_auto_replies"": true,
+  ""template"": {
+    ""id"": ""7fb09d8d-953f-4c1a-882d-97e152d19808"",
+    ""name"": ""Blank template""
+  },
+  ""theme"": {
+    ""id"": ""cfe73014-ad57-4eaa-9aa0-1bceec68ac34"",
+    ""name"": ""default theme""
+  },
+  ""theme_blocks"": ""{\""meta\"":{},\""rootBlock\"":{\""type\"":\""EmailTemplate\"",\""id\"":\""v3nu4k4ASauPuAS5vbGeBB\"",\""options\"":{\""theme\"":\""custom\"",\""bgColor\"":\""#F3F3F3\"",\""frameTextColor\"":\""light\"",\""width\"":650,\""gutterSize\"":\""large\""},\""children\"":[{\""type\"":\""EmailHeader\"",\""id\"":\""headerBlock\"",\""options\"":{\""layout\"":\""layoutoption3\"",\""theme\"":\""custom\"",\""bgColor\"":\""#2B8D36\"",\""txtColor\"":\""#000000\"",\""logo\"":\""app\"",\""showLinks\"":true,\""logoFileUrl\"":null},\""children\"":[],\""data\"":{\""logoWidth\"":563,\""logoWeight\"":183}},{\""id\"":\""bodyColumn\"",\""type\"":\""EmailTemplateColumn\"",\""data\"":{},\""children\"":[]},{\""id\"":\""body\"",\""type\"":\""Slot\"",\""data\"":{\""name\"":\""bodySlot\""},\""children\"":[]},{\""type\"":\""SocialMediaLinks\"",\""id\"":\""footerBlock\"",\""options\"":{\""enabled\"":\""on\"",\""theme\"":\""dark\"",\""bgColor\"":\""#2B8D36\"",\""iconColor\"":\""light\"",\""linkedin\"":\""\"",\""facebook\"":\""\""},\""children\"":[]},{\""type\"":\""MobilePromotion\"",\""id\"":\""mobilePromotion\"",\""options\"":{\""showPromotion\"":\""default\""},\""children\"":[]},{\""id\"":\""footerText\"",\""type\"":\""RichText\"",\""data\"":{\""doc\"":{\""type\"":\""doc\"",\""content\"":[{\""type\"":\""paragraph\"",\""attrs\"":{\""textAlign\"":\""center\"",\""paragraphStyle\"":\""\""},\""content\"":[]}]}}}]}}""
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=14/ENL_Newsletter_Dev+0+0000034289.json.gz
+12262,SYSTEM,2026-03-23 14:20:28.758,,,"{
+  ""headers"": [
+    {
+      ""key"": ""id"",
+      ""value"": ""985b0d0d-8543-47aa-8c73-674dae38c28a""
+    },
+    {
+      ""key"": ""eventType"",
+      ""value"": ""NEWSLETTER_MODIFIED""
+    },
+    {
+      ""key"": ""aggregate_id"",
+      ""value"": ""94f48c73-617d-46a0-8edf-7b6a9936b053""
+    },
+    {
+      ""key"": ""tenant_info"",
+      ""value"": ""{\""accountId\"":\""586bea5e-0819-4b82-9462-adea5658eb47\""}""
+    },
+    {
+      ""key"": ""kafka_offset"",
+      ""value"": ""34286""
+    },
+    {
+      ""key"": ""kafka_partition"",
+      ""value"": ""0""
+    },
+    {
+      ""key"": ""kafka_timestamp"",
+      ""value"": ""1774275490792""
+    }
+  ]
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=14/ENL_Newsletter_Dev+0+0000034285.headers.json.gz
+12263,SYSTEM,2026-03-23 14:20:28.758,,,"{
+  ""headers"": [
+    {
+      ""key"": ""id"",
+      ""value"": ""3829eefa-f202-49ea-b047-77bbd5aa9489""
+    },
+    {
+      ""key"": ""eventType"",
+      ""value"": ""NEWSLETTER_MODIFIED""
+    },
+    {
+      ""key"": ""aggregate_id"",
+      ""value"": ""202a20ae-ba80-4d69-ad0f-46febe2e293c""
+    },
+    {
+      ""key"": ""tenant_info"",
+      ""value"": ""{\""accountId\"":\""260cd6ce-041e-4252-abcd-cd93f9804d4e\""}""
+    },
+    {
+      ""key"": ""kafka_offset"",
+      ""value"": ""34287""
+    },
+    {
+      ""key"": ""kafka_partition"",
+      ""value"": ""0""
+    },
+    {
+      ""key"": ""kafka_timestamp"",
+      ""value"": ""1774275587416""
+    }
+  ]
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=14/ENL_Newsletter_Dev+0+0000034285.headers.json.gz
+12264,SYSTEM,2026-03-23 14:20:28.758,,,"{
+  ""blocks"": ""{\""meta\"":{\""version\"":\""\""},\""rootBlock\"":{\""id\"":\""new\"",\""type\"":\""EmailNewsletter\"",\""options\"":{},\""children\"":[]}}"",
+  ""channels"": {
+    ""email"": {
+      ""domain"": ""dev.simpplr.xyz"",
+      ""sender_address"": ""noreply@dev.simpplr.xyz"",
+      ""type"": ""email""
+    },
+    ""intranet"": {
+      ""type"": ""intranet""
+    }
+  },
+  ""created_at"": ""2026-03-23T14:07:49.902Z"",
+  ""creator_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""id"": ""94f48c73-617d-46a0-8edf-7b6a9936b053"",
+  ""is_archived"": false,
+  ""kafka_offset"": 34285,
+  ""kafka_partition"": 0,
+  ""kafka_timestamp"": 1774275485733,
+  ""message_ts"": null,
+  ""modified_at"": ""2026-03-23T14:18:04.074Z"",
+  ""modifier_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""name"": ""Copy of Copy of test"",
+  ""recipients"": [
+    {
+      ""count"": 4,
+      ""id"": ""32d2063e-7230-4f3d-b3a7-262ae8ed4b8d"",
+      ""name"": ""Newsletter india"",
+      ""type"": ""audience""
+    }
+  ],
+  ""reply_to_address"": ""noreply@dev.simpplr.xyz"",
+  ""send_as_timezone_aware_schedule"": false,
+  ""send_at"": ""2026-03-23T14:17:59.863Z"",
+  ""status"": ""scheduled"",
+  ""subject"": ""Copy of Copy of test"",
+  ""suppress_auto_replies"": true,
+  ""template"": {
+    ""id"": ""7fb09d8d-953f-4c1a-882d-97e152d19808"",
+    ""name"": ""Blank template""
+  },
+  ""theme"": {
+    ""id"": ""cfe73014-ad57-4eaa-9aa0-1bceec68ac34"",
+    ""name"": ""default theme""
+  },
+  ""theme_blocks"": ""{\""meta\"":{},\""rootBlock\"":{\""type\"":\""EmailTemplate\"",\""id\"":\""v3nu4k4ASauPuAS5vbGeBB\"",\""options\"":{\""theme\"":\""custom\"",\""bgColor\"":\""#F3F3F3\"",\""frameTextColor\"":\""light\"",\""width\"":650,\""gutterSize\"":\""large\""},\""children\"":[{\""type\"":\""EmailHeader\"",\""id\"":\""headerBlock\"",\""options\"":{\""layout\"":\""layoutoption3\"",\""theme\"":\""custom\"",\""bgColor\"":\""#2B8D36\"",\""txtColor\"":\""#000000\"",\""logo\"":\""app\"",\""showLinks\"":true,\""logoFileUrl\"":null},\""children\"":[],\""data\"":{\""logoWidth\"":563,\""logoWeight\"":183}},{\""id\"":\""bodyColumn\"",\""type\"":\""EmailTemplateColumn\"",\""data\"":{},\""children\"":[]},{\""id\"":\""body\"",\""type\"":\""Slot\"",\""data\"":{\""name\"":\""bodySlot\""},\""children\"":[]},{\""type\"":\""SocialMediaLinks\"",\""id\"":\""footerBlock\"",\""options\"":{\""enabled\"":\""on\"",\""theme\"":\""dark\"",\""bgColor\"":\""#2B8D36\"",\""iconColor\"":\""light\"",\""linkedin\"":\""\"",\""facebook\"":\""\""},\""children\"":[]},{\""type\"":\""MobilePromotion\"",\""id\"":\""mobilePromotion\"",\""options\"":{\""showPromotion\"":\""default\""},\""children\"":[]},{\""id\"":\""footerText\"",\""type\"":\""RichText\"",\""data\"":{\""doc\"":{\""type\"":\""doc\"",\""content\"":[{\""type\"":\""paragraph\"",\""attrs\"":{\""textAlign\"":\""center\"",\""paragraphStyle\"":\""\""},\""content\"":[]}]}}}]}}""
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=14/ENL_Newsletter_Dev+0+0000034285.json.gz
+12265,SYSTEM,2026-03-23 14:20:28.758,,,"{
+  ""blocks"": ""{\""meta\"":{\""version\"":\""\""},\""rootBlock\"":{\""id\"":\""new\"",\""type\"":\""EmailNewsletter\"",\""options\"":{},\""children\"":[]}}"",
+  ""channels"": {
+    ""email"": {
+      ""domain"": ""dev.simpplr.xyz"",
+      ""sender_address"": ""noreply@dev.simpplr.xyz"",
+      ""type"": ""email""
+    },
+    ""intranet"": {
+      ""type"": ""intranet""
+    }
+  },
+  ""created_at"": ""2026-03-23T14:07:49.902Z"",
+  ""creator_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""id"": ""94f48c73-617d-46a0-8edf-7b6a9936b053"",
+  ""is_archived"": false,
+  ""kafka_offset"": 34286,
+  ""kafka_partition"": 0,
+  ""kafka_timestamp"": 1774275490792,
+  ""message_ts"": null,
+  ""modified_at"": ""2026-03-23T14:18:04.074Z"",
+  ""modifier_id"": ""b7ec2600-5143-4c4a-804a-030b445510a6"",
+  ""name"": ""Copy of Copy of test"",
+  ""recipients"": [
+    {
+      ""count"": 4,
+      ""id"": ""32d2063e-7230-4f3d-b3a7-262ae8ed4b8d"",
+      ""name"": ""Newsletter india"",
+      ""type"": ""audience""
+    }
+  ],
+  ""reply_to_address"": ""noreply@dev.simpplr.xyz"",
+  ""send_as_timezone_aware_schedule"": false,
+  ""send_at"": ""2026-03-23T14:17:59.863Z"",
+  ""status"": ""sending"",
+  ""subject"": ""Copy of Copy of test"",
+  ""suppress_auto_replies"": true,
+  ""template"": {
+    ""id"": ""7fb09d8d-953f-4c1a-882d-97e152d19808"",
+    ""name"": ""Blank template""
+  },
+  ""theme"": {
+    ""id"": ""cfe73014-ad57-4eaa-9aa0-1bceec68ac34"",
+    ""name"": ""default theme""
+  },
+  ""theme_blocks"": ""{\""meta\"":{},\""rootBlock\"":{\""type\"":\""EmailTemplate\"",\""id\"":\""v3nu4k4ASauPuAS5vbGeBB\"",\""options\"":{\""theme\"":\""custom\"",\""bgColor\"":\""#F3F3F3\"",\""frameTextColor\"":\""light\"",\""width\"":650,\""gutterSize\"":\""large\""},\""children\"":[{\""type\"":\""EmailHeader\"",\""id\"":\""headerBlock\"",\""options\"":{\""layout\"":\""layoutoption3\"",\""theme\"":\""custom\"",\""bgColor\"":\""#2B8D36\"",\""txtColor\"":\""#000000\"",\""logo\"":\""app\"",\""showLinks\"":true,\""logoFileUrl\"":null},\""children\"":[],\""data\"":{\""logoWidth\"":563,\""logoWeight\"":183}},{\""id\"":\""bodyColumn\"",\""type\"":\""EmailTemplateColumn\"",\""data\"":{},\""children\"":[]},{\""id\"":\""body\"",\""type\"":\""Slot\"",\""data\"":{\""name\"":\""bodySlot\""},\""children\"":[]},{\""type\"":\""SocialMediaLinks\"",\""id\"":\""footerBlock\"",\""options\"":{\""enabled\"":\""on\"",\""theme\"":\""dark\"",\""bgColor\"":\""#2B8D36\"",\""iconColor\"":\""light\"",\""linkedin\"":\""\"",\""facebook\"":\""\""},\""children\"":[]},{\""type\"":\""MobilePromotion\"",\""id\"":\""mobilePromotion\"",\""options\"":{\""showPromotion\"":\""default\""},\""children\"":[]},{\""id\"":\""footerText\"",\""type\"":\""RichText\"",\""data\"":{\""doc\"":{\""type\"":\""doc\"",\""content\"":[{\""type\"":\""paragraph\"",\""attrs\"":{\""textAlign\"":\""center\"",\""paragraphStyle\"":\""\""},\""content\"":[]}]}}}]}}""
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=14/ENL_Newsletter_Dev+0+0000034285.json.gz
+12266,SYSTEM,2026-03-23 14:20:28.758,,,"{
+  ""blocks"": ""{\""meta\"":{\""version\"":\""\""},\""rootBlock\"":{\""id\"":\""6ixeduRK6j9CgQCXGx4dU7\"",\""type\"":\""EmailNewsletter\"",\""options\"":{},\""children\"":[]}}"",
+  ""category"": {
+    ""id"": ""d9e101d2-9408-4be7-8d4e-d13a88d891a9"",
+    ""name"": ""Monthly newsletter""
+  },
+  ""channels"": {
+    ""email"": {
+      ""domain"": ""dev.simpplr.xyz"",
+      ""sender_address"": ""noreply@dev.simpplr.xyz"",
+      ""type"": ""email""
+    },
+    ""intranet"": {
+      ""type"": ""intranet""
+    }
+  },
+  ""created_at"": ""2026-03-23T13:34:40.663Z"",
+  ""creator_id"": ""4f88649b-bfed-44b7-b077-d81339531382"",
+  ""id"": ""202a20ae-ba80-4d69-ad0f-46febe2e293c"",
+  ""is_archived"": false,
+  ""kafka_offset"": 34287,
+  ""kafka_partition"": 0,
+  ""kafka_timestamp"": 1774275587416,
+  ""message_ts"": null,
+  ""modified_at"": ""2026-03-23T14:19:41.557Z"",
+  ""modifier_id"": ""b18a4c0f-d4b1-481f-9339-803e751fee51"",
+  ""name"": ""Newsletter Manager Access updatess"",
+  ""recipients"": [
+    {
+      ""count"": 13,
+      ""id"": ""9828821b-eed5-49c4-9ea9-02343b8088b3"",
+      ""name"": ""Everyone in organization"",
+      ""type"": ""audience""
+    }
+  ],
+  ""reply_to_address"": ""noreply@dev.simpplr.xyz"",
+  ""send_as_timezone_aware_schedule"": false,
+  ""status"": ""draft"",
+  ""subject"": """",
+  ""suppress_auto_replies"": true,
+  ""theme"": {
+    ""id"": ""72fc0bd1-4e3b-48c5-bfe7-fe01a858d9f2"",
+    ""name"": ""ENL ABAC - Dev""
+  }
+}",kafka/de-sink-s3-connector-newsletter/ENL_Newsletter_Dev/year=2026/month=03/day=23/hour=14/ENL_Newsletter_Dev+0+0000034285.json.gz

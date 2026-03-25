@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: shared_services_staging
+    schema: shared_services_staging
+    tables:
+      - name: vw_enl_newsletter_category
+      - name: enl_newsletter_category_archive
+
+  # - name: udl
+  #   schema: udl
+  #   tables:
+  #     - name: newsletter_category
+  #       description: "Target UDL table for deduplication checks"

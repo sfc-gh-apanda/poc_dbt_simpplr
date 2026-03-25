@@ -1,0 +1,63 @@
+name: dbt_dev
+version: 1.0.0
+config-version: 2
+profile: dbt_dev
+model-paths:
+  - models
+analysis-paths:
+  - analyses
+test-paths:
+  - tests
+seed-paths:
+  - seeds
+macro-paths:
+  - macros
+snapshot-paths:
+  - snapshots
+
+on-run-start:
+  - "{{ check_batch_active() }}"
+
+on-run-end:
+  - "{{ mark_failed_processes() }}"
+
+models:
+  dbt_dev:
+    +materialized: view
+    
+    newsletter_category:
+      +meta:
+        transformation: newsletter_category
+        entity: employee_newsletter
+      
+      stg_newsletter_category:
+        +materialized: ephemeral
+        +tags: ['prepare']
+      
+      int_newsletter_category_latest:
+        +materialized: ephemeral
+        +tags: ['prepare']
+      
+      int_newsletter_category_deduped:
+        +materialized: ephemeral
+        +tags: ['prepare']
+      
+      shared_stg_newsletter_category:
+        +materialized: table
+        +transient: true
+        +schema: udl_batch_process
+        +tags: ['prepare']
+        +pre-hook: "{{ log_process_start('newsletter_category', 'stg_to_wrk') }}"
+      
+      wrk_newsletter_category:
+        +materialized: table
+        +transient: true
+        +schema: udl_batch_process
+        +tags: ['prepare']
+        +post-hook: "{{ log_process_end('newsletter_category', 'stg_to_wrk') }}"
+      
+      stg_raw_id_archive_category:
+        +materialized: incremental
+        +transient: true
+        +schema: udl_batch_process
+        +tags: ['prepare', 'archive']

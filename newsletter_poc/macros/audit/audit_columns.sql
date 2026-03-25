@@ -19,18 +19,18 @@ Columns Generated:
 
 
 {% macro audit_columns() %}
+    CURRENT_TIMESTAMP()::TIMESTAMP_NTZ                       AS dbt_loaded_at,
     '{{ invocation_id }}'::VARCHAR(50)                       AS dbt_run_id,
     MD5('{{ invocation_id }}' || '{{ this.name }}')::VARCHAR(32) AS dbt_batch_id,
-    CURRENT_TIMESTAMP()::TIMESTAMP_NTZ                       AS dbt_loaded_at,
     '{{ this.name }}'::VARCHAR(100)                          AS dbt_source_model,
     '{{ target.name }}'::VARCHAR(20)                         AS dbt_environment
 {% endmacro %}
 
 
 {% macro audit_columns_incremental(existing_alias='existing') %}
+    CURRENT_TIMESTAMP()::TIMESTAMP_NTZ                       AS dbt_loaded_at,
     '{{ invocation_id }}'::VARCHAR(50)                       AS dbt_run_id,
     MD5('{{ invocation_id }}' || '{{ this.name }}')::VARCHAR(32) AS dbt_batch_id,
-    CURRENT_TIMESTAMP()::TIMESTAMP_NTZ                       AS dbt_loaded_at,
     '{{ this.name }}'::VARCHAR(100)                          AS dbt_source_model,
     '{{ target.name }}'::VARCHAR(20)                         AS dbt_environment
 {% endmacro %}

@@ -1,0 +1,11 @@
+dbt_dev:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: placeholder
+      user: placeholder
+      role: R_DEPLOYMENT_ADMIN_DEV
+      warehouse: WH_ETL_DEV
+      database: COMMON_TENANT_DEV
+      schema: DBT

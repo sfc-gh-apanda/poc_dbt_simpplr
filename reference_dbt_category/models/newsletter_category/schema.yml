@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: stg_newsletter_category
+    description: "Extracts raw newsletter category data from staging view with watermark filtering."
+    config:
+      materialized: ephemeral
+
+  - name: int_newsletter_category_latest
+    description: "Ranks and selects the latest record per (tenant_code, code)."
+    config:
+      materialized: ephemeral
+
+  - name: int_newsletter_category_deduped
+    description: "Removes records that already exist in target UDL table."
+    config:
+      materialized: ephemeral
+
+  - name: shared_stg_newsletter_category
+    description: "Assigns IDs, active_flag, and batch metadata."
+
+  - name: wrk_newsletter_category
+    description: "Final working table for downstream publish."
+    columns:
+      - name: id
+        tests:
+          - unique
+          - not_null
+      - name: code
+        tests:
+          - not_null
+      - name: tenant_code
+        tests:
+          - not_null
+
+  - name: stg_raw_id_archive_category
+    description: "Tracks staging IDs processed per batch."
+    config:
+      materialized: incremental

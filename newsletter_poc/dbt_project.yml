@@ -103,6 +103,7 @@ models:
     # ═══════════════════════════════════════════════════════════════
     marts:
       +materialized: incremental
+      +on_schema_change: fail
       +schema: simpplr_dbt_marts
       +tags: ['newsletter', 'marts', 'merge']
       +access: public

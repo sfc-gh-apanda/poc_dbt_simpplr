@@ -65,9 +65,8 @@ WHERE run_status = 'SUCCESS';
 
 -- ─────────────────────────────────────────────────────────────────
 -- B1. Test Pass Rate Trend  [CHART: Line chart, X=date, Y=rate%]
--- Uses INFORMATION_SCHEMA for real-time results (no 45-min lag).
--- dbt tests compile to "select count(*) as failures..." queries.
--- Tests may not inherit model query_tags, so we match by SQL pattern.
+-- Uses ACCOUNT_USAGE.QUERY_HISTORY for up to 365 days of history
+-- (note: ~45 min latency). Adjust DATEADD lookback as needed.
 -- ─────────────────────────────────────────────────────────────────
 SELECT
     DATE(start_time)                                         AS "Test Date",
@@ -82,12 +81,9 @@ SELECT
             AND rows_produced = 0, 1, 0)) * 100.0
         / NULLIF(COUNT(*), 0), 1
     )                                                        AS "Pass Rate %"
-FROM TABLE(INFORMATION_SCHEMA.QUERY_HISTORY(
-    DATEADD('day', -7, CURRENT_TIMESTAMP()),
-    NULL,
-    10000
-)) q
-WHERE (
+FROM SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY q
+WHERE start_time >= DATEADD('day', -30, CURRENT_TIMESTAMP())
+  AND (
         LOWER(query_text) LIKE '%select count(*) as failures%'
         OR LOWER(query_text) LIKE '%select count(*) as validation_errors%'
         OR (LOWER(query_text) LIKE '%select count(%)%'
@@ -96,6 +92,7 @@ WHERE (
   AND LOWER(query_text) NOT LIKE '%insert%'
   AND LOWER(query_text) NOT LIKE '%create%'
   AND LOWER(query_text) NOT LIKE '%information_schema%'
+  AND LOWER(query_text) NOT LIKE '%account_usage%'
 GROUP BY 1
 ORDER BY 1 DESC;
 
@@ -110,19 +107,16 @@ SELECT
     ROUND(total_elapsed_time / 1000.0, 2)                    AS "Duration (sec)",
     TO_CHAR(start_time, 'YYYY-MM-DD HH24:MI')               AS "Run At",
     LEFT(query_text, 200)                                    AS "Test Query (preview)"
-FROM TABLE(INFORMATION_SCHEMA.QUERY_HISTORY(
-    DATEADD('day', -7, CURRENT_TIMESTAMP()),
-    NULL,
-    10000
-)) q
-WHERE (
+FROM SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY q
+WHERE start_time >= DATEADD('day', -30, CURRENT_TIMESTAMP())
+  AND (
         LOWER(query_text) LIKE '%select count(*) as failures%'
         OR LOWER(query_text) LIKE '%select count(*) as validation_errors%'
         OR (LOWER(query_text) LIKE '%select count(%)%'
             AND LOWER(query_text) LIKE '%simpplr_dbt_%')
     )
   AND LOWER(query_text) NOT LIKE '%insert%'
-  AND LOWER(query_text) NOT LIKE '%information_schema%'
+  AND LOWER(query_text) NOT LIKE '%account_usage%'
   AND execution_status = 'SUCCESS'
   AND rows_produced > 0
 ORDER BY start_time DESC
@@ -146,19 +140,16 @@ SELECT
         AND rows_produced = 0, 1, 0))                        AS "Passed",
     SUM(IFF(execution_status = 'SUCCESS'
         AND rows_produced > 0, 1, 0))                        AS "Failed"
-FROM TABLE(INFORMATION_SCHEMA.QUERY_HISTORY(
-    DATEADD('day', -7, CURRENT_TIMESTAMP()),
-    NULL,
-    10000
-)) q
-WHERE (
+FROM SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY q
+WHERE start_time >= DATEADD('day', -30, CURRENT_TIMESTAMP())
+  AND (
         LOWER(query_text) LIKE '%select count(*) as failures%'
         OR LOWER(query_text) LIKE '%select count(*) as validation_errors%'
         OR (LOWER(query_text) LIKE '%select count(%)%'
             AND LOWER(query_text) LIKE '%simpplr_dbt_%')
     )
   AND LOWER(query_text) NOT LIKE '%insert%'
-  AND LOWER(query_text) NOT LIKE '%information_schema%'
+  AND LOWER(query_text) NOT LIKE '%account_usage%'
 GROUP BY 1
 ORDER BY 1;
 

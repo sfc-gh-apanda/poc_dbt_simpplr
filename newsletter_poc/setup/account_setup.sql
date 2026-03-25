@@ -106,7 +106,7 @@ SELECT
     34277,
     '2026-03-23 13:35:08.935'::TIMESTAMP_NTZ,
     '2026-03-23 13:35:08.572'::TIMESTAMP_NTZ,
-    PARSE_JSON('{"aggregate_id":"85db08a2-3579-49b8-b4a4-1d80fd9021a7","eventType":"NEWSLETTER_MODIFIED","tenant_info":"{\"accountId\":\"586bea5e-0819-4b82-9462-adea5658eb47\"}"}'),
+    PARSE_JSON('{"aggregate_id":"85db08a2-3579-49b8-b4a4-1d80fd9021a7","eventType":"NEWSLETTER_MODIFIED","tenant_info":"{\\\"accountId\\\":\\\"586bea5e-0819-4b82-9462-adea5658eb47\\\"}"}'),
     'SYSTEM',
     '2026-03-23 13:40:22.149'::TIMESTAMP_NTZ,
     NULL, NULL;
@@ -147,7 +147,7 @@ SELECT
     34278,
     '2026-03-20 10:30:01.000'::TIMESTAMP_NTZ,
     '2026-03-20 10:30:00.000'::TIMESTAMP_NTZ,
-    PARSE_JSON('{"aggregate_id":"202a20ae-ba80-4d69-ad0f-46febe2e293c","eventType":"NEWSLETTER_MODIFIED","tenant_info":"{\"accountId\":\"260cd6ce-041e-4252-abcd-cd93f9804d4e\"}"}'),
+    PARSE_JSON('{"aggregate_id":"202a20ae-ba80-4d69-ad0f-46febe2e293c","eventType":"NEWSLETTER_MODIFIED","tenant_info":"{\\\"accountId\\\":\\\"260cd6ce-041e-4252-abcd-cd93f9804d4e\\\"}"}'),
     'SYSTEM',
     '2026-03-20 10:35:00.000'::TIMESTAMP_NTZ,
     NULL, NULL;
@@ -179,7 +179,7 @@ SELECT
     34279,
     '2026-03-18 14:00:01.000'::TIMESTAMP_NTZ,
     '2026-03-18 14:00:00.000'::TIMESTAMP_NTZ,
-    PARSE_JSON('{"aggregate_id":"del-nl-001-uuid-here-1234567890ab","eventType":"NEWSLETTER_DELETED","tenant_info":"{\"accountId\":\"586bea5e-0819-4b82-9462-adea5658eb47\"}"}'),
+    PARSE_JSON('{"aggregate_id":"del-nl-001-uuid-here-1234567890ab","eventType":"NEWSLETTER_DELETED","tenant_info":"{\\\"accountId\\\":\\\"586bea5e-0819-4b82-9462-adea5658eb47\\\"}"}'),
     'SYSTEM',
     '2026-03-18 14:05:00.000'::TIMESTAMP_NTZ,
     NULL, NULL;
@@ -214,7 +214,7 @@ SELECT
     34280,
     '2026-03-22 16:30:01.000'::TIMESTAMP_NTZ,
     '2026-03-22 16:30:00.000'::TIMESTAMP_NTZ,
-    PARSE_JSON('{"aggregate_id":"sch-nl-001-uuid-here-1234567890ab","eventType":"NEWSLETTER_MODIFIED","tenant_info":"{\"accountId\":\"260cd6ce-041e-4252-abcd-cd93f9804d4e\"}"}'),
+    PARSE_JSON('{"aggregate_id":"sch-nl-001-uuid-here-1234567890ab","eventType":"NEWSLETTER_MODIFIED","tenant_info":"{\\\"accountId\\\":\\\"260cd6ce-041e-4252-abcd-cd93f9804d4e\\\"}"}'),
     'SYSTEM',
     '2026-03-22 16:35:00.000'::TIMESTAMP_NTZ,
     NULL, NULL;
@@ -246,7 +246,7 @@ SELECT
     34275,
     '2026-03-23 13:34:58.694'::TIMESTAMP_NTZ,
     '2026-03-23 13:34:57.928'::TIMESTAMP_NTZ,
-    PARSE_JSON('{"aggregate_id":"85db08a2-3579-49b8-b4a4-1d80fd9021a7","eventType":"NEWSLETTER_CREATED","tenant_info":"{\"accountId\":\"586bea5e-0819-4b82-9462-adea5658eb47\"}"}'),
+    PARSE_JSON('{"aggregate_id":"85db08a2-3579-49b8-b4a4-1d80fd9021a7","eventType":"NEWSLETTER_CREATED","tenant_info":"{\\\"accountId\\\":\\\"586bea5e-0819-4b82-9462-adea5658eb47\\\"}"}'),
     'SYSTEM',
     '2026-03-23 13:40:22.149'::TIMESTAMP_NTZ,
     NULL, NULL;
@@ -276,7 +276,7 @@ SELECT
     50001,
     '2026-03-20 11:00:01.000'::TIMESTAMP_NTZ,
     '2026-03-20 11:00:00.000'::TIMESTAMP_NTZ,
-    PARSE_JSON('{"eventType":"NEWSLETTER_INTERACTION_CREATED","tenant_info":"{\"accountId\":\"260cd6ce-041e-4252-abcd-cd93f9804d4e\"}"}'),
+    PARSE_JSON('{"eventType":"NEWSLETTER_INTERACTION_CREATED","tenant_info":"{\\\"accountId\\\":\\\"260cd6ce-041e-4252-abcd-cd93f9804d4e\\\"}"}'),
     'SYSTEM',
     '2026-03-20 11:05:00.000'::TIMESTAMP_NTZ,
     NULL, NULL;
@@ -306,7 +306,7 @@ SELECT
     50002,
     '2026-03-20 12:30:01.000'::TIMESTAMP_NTZ,
     '2026-03-20 12:30:00.000'::TIMESTAMP_NTZ,
-    PARSE_JSON('{"eventType":"NEWSLETTER_INTERACTION_CREATED","tenant_info":"{\"accountId\":\"260cd6ce-041e-4252-abcd-cd93f9804d4e\"}"}'),
+    PARSE_JSON('{"eventType":"NEWSLETTER_INTERACTION_CREATED","tenant_info":"{\\\"accountId\\\":\\\"260cd6ce-041e-4252-abcd-cd93f9804d4e\\\"}"}'),
     'SYSTEM',
     '2026-03-20 12:35:00.000'::TIMESTAMP_NTZ,
     NULL, NULL;
@@ -332,7 +332,7 @@ SELECT
     50003,
     '2026-03-23 14:00:01.000'::TIMESTAMP_NTZ,
     '2026-03-23 14:00:00.000'::TIMESTAMP_NTZ,
-    PARSE_JSON('{"eventType":"NEWSLETTER_INTERACTION_CREATED","tenant_info":"{\"accountId\":\"586bea5e-0819-4b82-9462-adea5658eb47\"}"}'),
+    PARSE_JSON('{"eventType":"NEWSLETTER_INTERACTION_CREATED","tenant_info":"{\\\"accountId\\\":\\\"586bea5e-0819-4b82-9462-adea5658eb47\\\"}"}'),
     'SYSTEM',
     '2026-03-23 14:05:00.000'::TIMESTAMP_NTZ,
     NULL, NULL;
@@ -357,7 +357,7 @@ SELECT
     50004,
     '2026-03-20 15:00:01.000'::TIMESTAMP_NTZ,
     '2026-03-20 15:00:00.000'::TIMESTAMP_NTZ,
-    PARSE_JSON('{"eventType":"NEWSLETTER_INTERACTION_CREATED","tenant_info":"{\"accountId\":\"260cd6ce-041e-4252-abcd-cd93f9804d4e\"}"}'),
+    PARSE_JSON('{"eventType":"NEWSLETTER_INTERACTION_CREATED","tenant_info":"{\\\"accountId\\\":\\\"260cd6ce-041e-4252-abcd-cd93f9804d4e\\\"}"}'),
     'SYSTEM',
     '2026-03-20 15:05:00.000'::TIMESTAMP_NTZ,
     NULL, NULL;
@@ -377,7 +377,7 @@ SELECT
     60001,
     '2026-01-15 10:00:01.000'::TIMESTAMP_NTZ,
     '2026-01-15 10:00:00.000'::TIMESTAMP_NTZ,
-    PARSE_JSON('{"eventType":"NEWSLETTER_CATEGORY_CREATED","tenant_info":"{\"accountId\":\"260cd6ce-041e-4252-abcd-cd93f9804d4e\"}"}'),
+    PARSE_JSON('{"eventType":"NEWSLETTER_CATEGORY_CREATED","tenant_info":"{\\\"accountId\\\":\\\"260cd6ce-041e-4252-abcd-cd93f9804d4e\\\"}"}'),
     'SYSTEM',
     '2026-01-15 10:05:00.000'::TIMESTAMP_NTZ,
     NULL, NULL;
@@ -392,7 +392,7 @@ SELECT
     60002,
     '2026-02-01 08:00:01.000'::TIMESTAMP_NTZ,
     '2026-02-01 08:00:00.000'::TIMESTAMP_NTZ,
-    PARSE_JSON('{"eventType":"NEWSLETTER_CATEGORY_CREATED","tenant_info":"{\"accountId\":\"586bea5e-0819-4b82-9462-adea5658eb47\"}"}'),
+    PARSE_JSON('{"eventType":"NEWSLETTER_CATEGORY_CREATED","tenant_info":"{\\\"accountId\\\":\\\"586bea5e-0819-4b82-9462-adea5658eb47\\\"}"}'),
     'SYSTEM',
     '2026-02-01 08:05:00.000'::TIMESTAMP_NTZ,
     NULL, NULL;
@@ -407,7 +407,7 @@ SELECT
     60003,
     '2026-03-01 12:00:01.000'::TIMESTAMP_NTZ,
     '2026-03-01 12:00:00.000'::TIMESTAMP_NTZ,
-    PARSE_JSON('{"eventType":"NEWSLETTER_CATEGORY_CREATED","tenant_info":"{\"accountId\":\"260cd6ce-041e-4252-abcd-cd93f9804d4e\"}"}'),
+    PARSE_JSON('{"eventType":"NEWSLETTER_CATEGORY_CREATED","tenant_info":"{\\\"accountId\\\":\\\"260cd6ce-041e-4252-abcd-cd93f9804d4e\\\"}"}'),
     'SYSTEM',
     '2026-03-01 12:05:00.000'::TIMESTAMP_NTZ,
     NULL, NULL;

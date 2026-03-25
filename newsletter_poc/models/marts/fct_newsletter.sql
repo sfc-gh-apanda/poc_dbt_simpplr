@@ -125,11 +125,11 @@ final AS (
         deleted_datetime,
 
         TRUE                                                         AS active_flag,
-        CURRENT_TIMESTAMP()                                          AS active_date,
+        CURRENT_TIMESTAMP()::TIMESTAMP_NTZ                           AS active_date,
         NULL::TIMESTAMP_NTZ                                          AS inactive_date,
 
         CURRENT_USER()                                               AS created_by,
-        CURRENT_TIMESTAMP()                                          AS created_datetime,
+        CURRENT_TIMESTAMP()::TIMESTAMP_NTZ                           AS created_datetime,
         NULL::VARCHAR                                                AS updated_by,
         NULL::TIMESTAMP_NTZ                                          AS updated_datetime,
 
