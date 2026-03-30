@@ -1,0 +1,371 @@
+version: 2
+
+models:
+  # ═══════════════════════════════════════════════════════════════════════
+  # fct_newsletter — Latest newsletter snapshot (mirrors UDL.NEWSLETTER)
+  # ═══════════════════════════════════════════════════════════════════════
+  - name: fct_newsletter
+    description: >
+      Final newsletter fact table — the "latest and greatest" snapshot of each newsletter.
+      Incrementally merged on (tenant_code, code). Enriched with reference table lookups
+      for status and recipient type. Mirrors the structure of UDL.NEWSLETTER.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: id
+        data_type: NUMBER(38,0)
+        constraints:
+          - type: not_null
+        tests:
+          - not_null
+          - unique
+      - name: data_source_code
+        data_type: VARCHAR(16)
+        tests:
+          - accepted_values:
+              values: ['DS001', 'DS002']
+              config:
+                where: "data_source_code IS NOT NULL"
+      - name: tenant_code
+        data_type: VARCHAR(255)
+        constraints:
+          - type: not_null
+        tests:
+          - not_null
+      - name: staging_id
+        data_type: NUMBER(38,0)
+      - name: code
+        data_type: VARCHAR(255)
+        constraints:
+          - type: not_null
+        tests:
+          - not_null
+      - name: name
+        data_type: VARCHAR(16777216)
+      - name: subject
+        data_type: VARCHAR(16777216)
+      - name: sender_address
+        data_type: VARCHAR(16777216)
+      - name: send_as_email
+        data_type: BOOLEAN
+      - name: send_as_sms
+        data_type: BOOLEAN
+      - name: send_as_ms_teams_message
+        data_type: BOOLEAN
+      - name: send_as_slack_message
+        data_type: BOOLEAN
+      - name: send_as_intranet
+        data_type: BOOLEAN
+      - name: scheduled_at
+        data_type: TIMESTAMP_NTZ
+      - name: sent_at
+        data_type: TIMESTAMP_NTZ
+      - name: newsletter_created_by_code
+        data_type: VARCHAR(255)
+      - name: newsletter_updated_by_code
+        data_type: VARCHAR(255)
+      - name: newsletter_created_datetime
+        data_type: TIMESTAMP_NTZ
+      - name: newsletter_updated_datetime
+        data_type: TIMESTAMP_NTZ
+      - name: status_code
+        data_type: VARCHAR(255)
+        tests:
+          - not_null
+      - name: category_code
+        data_type: VARCHAR(255)
+      - name: template_code
+        data_type: VARCHAR(255)
+      - name: theme_code
+        data_type: VARCHAR(255)
+      - name: is_archived
+        data_type: BOOLEAN
+      - name: send_as_timezone_aware_schedule
+        data_type: BOOLEAN
+      - name: reply_to_email_address
+        data_type: VARCHAR(16777216)
+      - name: recipient_info
+        data_type: VARIANT
+      - name: recipient_type_code
+        data_type: VARCHAR(255)
+        tests:
+          - not_null
+      - name: is_deleted
+        data_type: BOOLEAN
+      - name: deleted_note
+        data_type: VARCHAR(16777216)
+      - name: deleted_datetime
+        data_type: TIMESTAMP_NTZ
+      - name: active_flag
+        data_type: BOOLEAN
+        constraints:
+          - type: not_null
+      - name: active_date
+        data_type: TIMESTAMP_NTZ
+      - name: inactive_date
+        data_type: TIMESTAMP_NTZ
+      - name: created_by
+        data_type: VARCHAR(255)
+      - name: created_datetime
+        data_type: TIMESTAMP_NTZ
+      - name: updated_by
+        data_type: VARCHAR(255)
+      - name: updated_datetime
+        data_type: TIMESTAMP_NTZ
+      - name: hash_value
+        data_type: VARCHAR(32)
+        constraints:
+          - type: not_null
+        tests:
+          - not_null
+      - name: recipient_name
+        data_type: VARCHAR(16777216)
+      - name: actual_delivery_system_type
+        data_type: VARCHAR(16777216)
+      - name: dbt_loaded_at
+        data_type: TIMESTAMP_NTZ
+        constraints:
+          - type: not_null
+      - name: dbt_run_id
+        data_type: VARCHAR(50)
+      - name: dbt_batch_id
+        data_type: VARCHAR(32)
+      - name: dbt_source_model
+        data_type: VARCHAR(100)
+      - name: dbt_environment
+        data_type: VARCHAR(20)
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - tenant_code
+            - code
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # fct_newsletter_interaction — Latest interaction per event
+  # ═══════════════════════════════════════════════════════════════════════
+  - name: fct_newsletter_interaction
+    description: >
+      Final newsletter interaction fact table. One row per interaction event (latest version).
+      Incrementally merged on (tenant_code, code). Enriched with 5 reference table lookups
+      (interaction type, delivery system, recipient type, click type, block type).
+      Mirrors the structure of UDL.NEWSLETTER_INTERACTION.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: id
+        data_type: NUMBER(38,0)
+        constraints:
+          - type: not_null
+        tests:
+          - not_null
+          - unique
+      - name: data_source_code
+        data_type: VARCHAR(16)
+        tests:
+          - accepted_values:
+              values: ['DS001', 'DS002']
+              config:
+                where: "data_source_code IS NOT NULL"
+      - name: tenant_code
+        data_type: VARCHAR(255)
+        constraints:
+          - type: not_null
+        tests:
+          - not_null
+      - name: staging_id
+        data_type: NUMBER(38,0)
+      - name: code
+        data_type: VARCHAR(255)
+        constraints:
+          - type: not_null
+        tests:
+          - not_null
+      - name: newsletter_code
+        data_type: VARCHAR(255)
+      - name: recipient_code
+        data_type: VARCHAR(16777216)
+      - name: interaction_type_code
+        data_type: VARCHAR(255)
+        tests:
+          - not_null
+      - name: delivery_system_type_code
+        data_type: VARCHAR(255)
+        tests:
+          - not_null
+      - name: device_type_code
+        data_type: VARCHAR(16)
+        tests:
+          - accepted_values:
+              values: ['DT000', 'DT001', 'DT002', 'DT003', 'DT004', 'DT005']
+      - name: total_time_spent_on_intranet_hub
+        data_type: NUMBER(38,0)
+      - name: recipient_current_city
+        data_type: VARCHAR(16777216)
+      - name: recipient_current_country
+        data_type: VARCHAR(16777216)
+      - name: recipient_current_department
+        data_type: VARCHAR(16777216)
+      - name: recipient_current_location
+        data_type: VARCHAR(16777216)
+      - name: recipient_current_email
+        data_type: VARCHAR(16777216)
+      - name: interaction_datetime
+        data_type: TIMESTAMP_NTZ
+      - name: recipient_type_code
+        data_type: VARCHAR(255)
+      - name: block_code
+        data_type: VARCHAR(255)
+      - name: block_type_code
+        data_type: VARCHAR(255)
+      - name: click_type_code
+        data_type: VARCHAR(255)
+      - name: ip_address
+        data_type: VARCHAR(255)
+      - name: link_clicked_page_title
+        data_type: VARCHAR(16777216)
+      - name: link_clicked_url
+        data_type: VARCHAR(16777216)
+      - name: session_id
+        data_type: VARCHAR(255)
+      - name: recipient_current_timezone
+        data_type: VARCHAR(255)
+      - name: user_agent
+        data_type: VARCHAR(16777216)
+      - name: active_flag
+        data_type: BOOLEAN
+        constraints:
+          - type: not_null
+      - name: active_date
+        data_type: TIMESTAMP_NTZ
+      - name: created_by
+        data_type: VARCHAR(255)
+      - name: created_datetime
+        data_type: TIMESTAMP_NTZ
+      - name: updated_by
+        data_type: VARCHAR(255)
+      - name: updated_datetime
+        data_type: TIMESTAMP_NTZ
+      - name: hash_value
+        data_type: VARCHAR(32)
+        constraints:
+          - type: not_null
+        tests:
+          - not_null
+      - name: dbt_loaded_at
+        data_type: TIMESTAMP_NTZ
+        constraints:
+          - type: not_null
+      - name: dbt_run_id
+        data_type: VARCHAR(50)
+      - name: dbt_batch_id
+        data_type: VARCHAR(32)
+      - name: dbt_source_model
+        data_type: VARCHAR(100)
+      - name: dbt_environment
+        data_type: VARCHAR(20)
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - tenant_code
+            - code
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # fct_newsletter_category — Latest category per code
+  # ═══════════════════════════════════════════════════════════════════════
+  - name: fct_newsletter_category
+    description: >
+      Final newsletter category dimension table. One row per category (latest version).
+      Incrementally merged on (tenant_code, code). Simple entity with
+      code, name, and creation timestamp. Mirrors UDL.NEWSLETTER_CATEGORY.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: id
+        data_type: NUMBER(38,0)
+        constraints:
+          - type: not_null
+        tests:
+          - not_null
+          - unique
+      - name: data_source_code
+        data_type: VARCHAR(16)
+        tests:
+          - accepted_values:
+              values: ['DS001', 'DS002']
+              config:
+                where: "data_source_code IS NOT NULL"
+      - name: tenant_code
+        data_type: VARCHAR(255)
+        constraints:
+          - type: not_null
+        tests:
+          - not_null
+      - name: staging_id
+        data_type: NUMBER(38,0)
+      - name: code
+        data_type: VARCHAR(255)
+        constraints:
+          - type: not_null
+        tests:
+          - not_null
+      - name: name
+        data_type: VARCHAR(16777216)
+      - name: category_created_datetime
+        data_type: TIMESTAMP_NTZ
+      - name: active_flag
+        data_type: BOOLEAN
+        constraints:
+          - type: not_null
+      - name: active_date
+        data_type: TIMESTAMP_NTZ
+      - name: inactive_date
+        data_type: TIMESTAMP_NTZ
+      - name: created_by
+        data_type: VARCHAR(255)
+      - name: created_datetime
+        data_type: TIMESTAMP_NTZ
+      - name: updated_by
+        data_type: VARCHAR(255)
+      - name: updated_datetime
+        data_type: TIMESTAMP_NTZ
+      - name: hash_value
+        data_type: VARCHAR(32)
+        constraints:
+          - type: not_null
+        tests:
+          - not_null
+      - name: dbt_loaded_at
+        data_type: TIMESTAMP_NTZ
+        constraints:
+          - type: not_null
+      - name: dbt_run_id
+        data_type: VARCHAR(50)
+      - name: dbt_batch_id
+        data_type: VARCHAR(32)
+      - name: dbt_source_model
+        data_type: VARCHAR(100)
+      - name: dbt_environment
+        data_type: VARCHAR(20)
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - tenant_code
+            - code
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # pipeline_complete — Sentinel model for atomic publish + archive
+  # ═══════════════════════════════════════════════════════════════════════
+  - name: pipeline_complete
+    description: >
+      Sentinel model that depends on all 3 mart models via ref(). Only runs
+      after all marts complete successfully. Post-hooks perform:
+      1. Atomic clone+swap publish from DBT_UDL → UDL (all entities + NEWSLETTER_HIST)
+      2. Archive processed raw records from ENL_* → ENL_*_ARCHIVE (if enabled)
+    columns:
+      - name: model
+        description: "Name of the upstream mart model"
+      - name: row_count
+        description: "Row count of the upstream mart model"

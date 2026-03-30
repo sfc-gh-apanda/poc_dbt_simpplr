@@ -1,0 +1,112 @@
+version: 2
+
+sources:
+  - name: shared_services_staging
+    description: "Simpplr shared services staging — newsletter raw views and archive tables"
+    database: COMMON_TENANT_DEV
+    schema: SHARED_SERVICES_STAGING
+    tags: ['newsletter', 'source']
+    tables:
+      - name: VW_ENL_NEWSLETTER
+        description: >
+          Raw staging view for newsletter events.
+          Each row is a header+payload pair with DOMAIN_PAYLOAD (VARIANT)
+          containing the full newsletter JSON and HEADER containing tenant info.
+        columns:
+          - name: ID
+            description: "Staging row identifier"
+            tests:
+              - not_null
+              - unique
+          - name: HEADER_ID
+            description: "Header row identifier (from header file)"
+          - name: DOMAIN_PAYLOAD
+            description: "Full newsletter event payload (VARIANT)"
+            tests:
+              - not_null
+          - name: TYPE
+            description: "Event type (NEWSLETTER_CREATED, NEWSLETTER_MODIFIED, NEWSLETTER_DELETED)"
+            tests:
+              - accepted_values:
+                  values: ['NEWSLETTER_CREATED', 'NEWSLETTER_MODIFIED', 'NEWSLETTER_DELETED']
+          - name: KAFKA_TIMESTAMP
+            description: "Kafka ingestion timestamp"
+            tests:
+              - not_null
+          - name: HEADER
+            description: "Kafka header with tenant_info (VARIANT)"
+            tests:
+              - not_null
+          - name: CREATED_DATETIME
+            description: "Row insertion timestamp — used for incremental watermark"
+            tests:
+              - not_null
+
+      - name: VW_ENL_NEWSLETTER_INTERACTION
+        description: >
+          Raw staging view for newsletter interaction events.
+          Tracks user-level engagement (opens, clicks, sends) across delivery channels.
+        columns:
+          - name: ID
+            description: "Staging row identifier"
+            tests:
+              - not_null
+              - unique
+          - name: DOMAIN_PAYLOAD
+            description: "Full interaction event payload (VARIANT)"
+            tests:
+              - not_null
+          - name: KAFKA_TIMESTAMP
+            description: "Kafka ingestion timestamp"
+            tests:
+              - not_null
+          - name: HEADER
+            description: "Kafka header with tenant_info (VARIANT)"
+            tests:
+              - not_null
+          - name: CREATED_DATETIME
+            description: "Row insertion timestamp — used for incremental watermark"
+            tests:
+              - not_null
+
+      - name: VW_ENL_NEWSLETTER_CATEGORY
+        description: >
+          Raw staging view for newsletter category events.
+          Simple entity with code, name, and creation timestamp.
+        columns:
+          - name: ID
+            description: "Staging row identifier"
+            tests:
+              - not_null
+              - unique
+          - name: DOMAIN_PAYLOAD
+            description: "Full category event payload (VARIANT)"
+            tests:
+              - not_null
+          - name: KAFKA_TIMESTAMP
+            description: "Kafka ingestion timestamp"
+            tests:
+              - not_null
+          - name: HEADER
+            description: "Kafka header with tenant_info (VARIANT)"
+            tests:
+              - not_null
+          - name: CREATED_DATETIME
+            description: "Row insertion timestamp — used for incremental watermark"
+            tests:
+              - not_null
+
+      - name: ENL_NEWSLETTER_ARCHIVE
+        description: >
+          Newsletter archive table. Used during full-load runs
+          in combination with the raw view.
+
+      - name: ENL_NEWSLETTER_INTERACTION_ARCHIVE
+        description: >
+          Newsletter interaction archive table. Used during full-load runs
+          in combination with the raw view.
+
+      - name: ENL_NEWSLETTER_CATEGORY_ARCHIVE
+        description: >
+          Newsletter category archive table. Used during full-load runs
+          in combination with the raw view.

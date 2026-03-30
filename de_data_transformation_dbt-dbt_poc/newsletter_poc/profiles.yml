@@ -1,0 +1,12 @@
+newsletter_poc:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: wjb34325
+      user: DEVRAJ_GURJAR
+      role: R_DEPLOYMENT_ADMIN_DEV
+      warehouse: WH_ETL
+      database: COMMON_TENANT_DEV
+      schema: DBT_UDL
+      threads: 4

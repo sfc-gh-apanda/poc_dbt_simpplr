@@ -1,0 +1,182 @@
+{
+    "CORE": {
+        "1": [
+            "prc_tenant_information_transformation",
+            "prc_tenant_fields_transformation"
+        ],
+        "2": [
+            "prc_tenant_config_transformation",
+            "prc_tenant_details_transformation",
+            "prc_content_moderation_detail_transformation_shared",
+            "prc_user_login_events_transformation",
+            "prc_award_transformation",
+            "prc_campaign_transformation",
+            "prc_campaign_assets_transformation",
+            "prc_company_values_transformation",
+            "prc_user_company_values_transformation",
+            "prc_event_transformation",
+            "prc_page_category_transformation",
+            "prc_segment_transformation",
+            "prc_event_attendees_transformation_zeus",
+            "prc_transaction_shared",
+            "prc_entity_audience_mapping_transformation_zeus"
+        ],
+        "3": [
+            "prc_site_transformation",
+            "prc_user_category_transformation",
+            "prc_user_awards_transformation",
+            "prc_search_transformation",
+            "prc_search_result_click_transformation"
+        ],
+        "4": [
+            "prc_user_transformation",
+            "prc_assets_shared",
+            "prc_allowance_configuration_shared",
+            "prc_reward_item_shared",
+            "prc_perception_theme_transformation"
+        ],
+        "5": [
+            "prc_file_transformation"
+        ],
+        "6": [
+            "prc_user_preference_transformation",
+            "prc_user_rewards_shared",
+            "prc_expertise_transformation",
+            "prc_sentiment_check_configuration_shared",
+            "prc_sentiment_check_response_shared",
+            "prc_app_link_transformation",
+            "prc_app_link_usage_transformation_shared",
+            "prc_topic_feed_transformation",
+            "prc_comment_transformation",
+            "prc_carousel_items_transformation",
+            "prc_topic_content_transformation",
+            "prc_content_transformation",
+            "prc_site_participants_transformation",
+            "prc_social_campaign_share_transformation",
+            "prc_topic_followers_transformation",
+            "prc_topic_transformation",
+            "prc_user_followers_transformation",
+            "prc_social_campaign_transformation",
+            "prc_awareness_check_response_transformation_shared",
+            "prc_audience_transformation_zeus",
+            "prc_audience_members_transformation_zeus",
+            "prc_site_category_transformation",
+            "prc_awareness_check_option_transformation_shared",
+            "prc_awareness_check_question_transformation_shared"
+        ],
+        "7": [
+            "prc_user_expertise_transformation",
+            "prc_feed_transformation",
+            "prc_content_must_read_marked_transformation",
+            "prc_abac_feature_target_audience_manager_transformation_zeus"
+        ],
+        "8": [
+            "prc_interaction_transformation",
+            "prc_native_video_interaction_transformation",
+            "prc_user_config_transformation",
+            "prc_file_mapping_transformation"
+        ],
+        "9": [
+            "Interaction_Table_Data_Migration",
+            "User_Login_Events_Table_Data_Migration",
+            "Native_Video_Interaction_Table_Data_Migration"
+        ],
+        "10": [
+            "prc_daily_user_adoption_transformation_aggregate",
+            "prc_daily_content_adoption_transformation_aggregate",
+            "prc_daily_site_adoption_transformation_aggregate",
+            "prc_daily_file_adoption_transformation_aggregate"
+        ],
+        "11": [
+            "prc_daily_tenant_adoption_transformation_aggregate",
+            "prc_daily_manager_adoption_transformation_aggregate"
+        ],
+        "12": [
+            "Snapshot_Table_Historical_Data_Migration"
+        ],
+        "13": [
+            "prc_user_measures",
+            "prc_content_measures"
+        ]
+    },
+    "SHARED_SERVICES": {
+        "1": [
+            "prc_campaign_measures_shared"
+        ]
+    },
+    "MONTHLY_SNAPSHOTS": {
+        "1": [
+            "prc_app_manager_monthly_notification_snapshot_transformation"
+        ],
+        "2": [
+            "prc_site_manager_monthly_notification_snapshot_transformation"
+        ],
+        "3": [
+            "prc_content_author_monthly_notification_snapshot_transformation"
+        ]
+    },
+    "DAILY_SNAPSHOTS": {
+        "1": [
+            "prc_daily_popularity_score_transformation",
+            "prc_search_metric_transformation_shared",
+            "prc_ingestion_metric_transformation_shared",
+            "prc_weekly_tenant_adoption_transformation_aggregate",
+            "prc_monthly_tenant_adoption_transformation_aggregate",
+            "prc_monthly_content_adoption_transformation_aggregate",
+            "prc_monthly_site_adoption_transformation_aggregate",
+            "prc_monthly_manager_adoption_transformation_aggregate",
+            "prc_search_measures_transformation_aggregate"
+        ],
+        "2": [
+            "prc_user_content_measures",
+            "prc_user_site_measures"
+        ],
+        "3": [
+            "prc_utm_source_measures",
+            "prc_utm_source_site_measures",
+            "prc_page_group_measures",
+            "prc_file_measures"
+        ],
+        "4": [
+            "prc_site_measures"
+        ],
+        "5": [
+            "prc_tenant_measures"
+        ]
+    },
+    "CORE_ADDITIONAL_PARALLEL_TASK": {
+    },
+    "ZEUS_ADDITIONAL_PARALLEL_TASK": {
+    },
+    "EMPLOYEE_NEWSLETTER": {
+        "1": ["prc_newsletter_transformation_shared","prc_newsletter_interaction_transformation_shared","prc_newsletter_category_transformation_shared"]
+    },
+    "ZEUS_CHAT": {
+        "1": ["prc_chat_message_transformation_zeus", "prc_chat_calls_transformation_zeus", "prc_chat_call_attendees_transformation_zeus", "prc_chat_conversations_transformation_zeus", "prc_chat_conversation_members_transformation_zeus"]
+    },
+    "ZEUS_AQUA": {
+        "1": ["prc_aqua_ticket_transformation_zeus", "prc_aqua_ticket_task_transformation_zeus"]
+    },
+    "EMPLOYEE_LISTENING": {
+        "1": ["prc_theme_transformation_shared",
+         "prc_section_instance_transformation_shared",
+         "prc_survey_instance_transformation_shared",
+         "prc_survey_instance_question_transformation_shared",
+         "prc_survey_recipient_transformation_shared",
+         "prc_survey_response_transformation_shared",
+         "prc_survey_question_bank_transformation_shared",
+         "prc_survey_question_answer_bank_transformation_shared"
+        ]
+    },
+    "INTEGRATION": {
+        "1": ["Connector/config/ConnectorConfig.properties","ConnectorAccountAuthConfig/config/ConnectorAccountAuthConfig.properties",
+        "ApiAction/config/ApiActionConfig.properties","ApiActionAccountConfig/config/ApiActionAccountConfig.properties","Tile/config/TileConfig.properties","TileInstance/config/TileInstanceConfig.properties"],
+        "2": ["UserTileInstanceMapping/config/UserTileInstanceMappingConfig.properties"]
+    },
+    "FORM": {
+        "1": ["Form/config/Form.properties","FormInteraction/config/FormInteraction.properties"]
+    },
+    "POLL": {
+        "1": ["Poll/config/Poll.properties","PollInteraction/config/PollInteraction.properties"]
+    }
+}

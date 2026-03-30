@@ -1,0 +1,7 @@
+id,code,description,active_flag,active_date,identifier_shared_service
+1,NLIT001,Sent,TRUE,2024-01-01,sent
+2,NLIT002,Delivered,TRUE,2024-01-01,delivered
+3,NLIT003,Opened,TRUE,2024-01-01,opened
+4,NLIT004,Clicked,TRUE,2024-01-01,clicked
+5,NLIT005,Bounced,TRUE,2024-01-01,bounced
+6,NLIT006,Unsubscribed,TRUE,2024-01-01,unsubscribed

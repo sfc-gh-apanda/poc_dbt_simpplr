@@ -1,0 +1,133 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# NEWSLETTER_POC — Simpplr Newsletter dbt PoC with Full Audit & Telemetry
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# FEATURES:
+#   - Audit columns (dbt_run_id, dbt_batch_id, dbt_loaded_at, dbt_source_model)
+#   - Row hash for change detection (entity-specific, Scala-compatible)
+#   - Incremental merge with hash-based deduplication
+#   - Processing tracking (run log, model log)
+#   - Automated logging via hooks
+#   - SCD-2 snapshots for newsletter history
+#   - Schema contracts on mart models
+#   - dbt_expectations for data quality
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: newsletter_poc
+version: '1.0.0'
+config-version: 2
+profile: newsletter_poc
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# HOOKS — Automated Processing Tracking
+# ═══════════════════════════════════════════════════════════════════════════════
+
+on-run-start:
+  - "{{ log_run_start() }}"
+
+on-run-end:
+  - "{{ log_run_end() }}"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# VARIABLES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+vars:
+  default_null_timestamp: '2000-01-01 00:00:00'
+
+  data_process_end_time: '9999-12-31 23:59:59'
+
+  is_full_load: false
+
+  entity_specific_full_load: 'none'
+
+  enable_audit_logging: true
+  audit_schema: 'DBT_EXECUTION_RUN_STATS'
+
+  enable_row_count_tracking: true
+
+  # Publish: clone+swap DBT_UDL → UDL atomically after all marts complete
+  enable_publish: true
+
+  # Archive: move processed raw records to archive tables after publish
+  # Default false — enable via --vars '{enable_archive: true}' or Airflow flag
+  enable_archive: false
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SEED CONFIGURATIONS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+seeds:
+  newsletter_poc:
+    +schema: UDL
+    +tags: ['reference_data']
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MODEL CONFIGURATIONS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+models:
+  newsletter_poc:
+    +persist_docs:
+      relation: true
+      columns: true
+
+    +post-hook:
+      - "{{ log_model_execution() }}"
+
+    # ═══════════════════════════════════════════════════════════════
+    # STAGING LAYER (Protected — accessible within project only)
+    # ═══════════════════════════════════════════════════════════════
+    staging:
+      +materialized: table
+      +schema: UDL
+      +tags: ['newsletter', 'staging']
+      +access: protected
+      +query_tag: 'dbt_newsletter_staging'
+      +docs:
+        node_color: "#4CAF50"
+
+    # ═══════════════════════════════════════════════════════════════
+    # INTERMEDIATE LAYER (Protected — ephemeral CTEs)
+    # ═══════════════════════════════════════════════════════════════
+    intermediate:
+      +materialized: ephemeral
+      +schema: UDL
+      +tags: ['newsletter', 'intermediate']
+      +access: protected
+      +docs:
+        node_color: "#FF9800"
+
+    # ═══════════════════════════════════════════════════════════════
+    # MARTS LAYER (Public — downstream consumers)
+    # ═══════════════════════════════════════════════════════════════
+    marts:
+      +materialized: incremental
+      +on_schema_change: fail
+      +schema: DBT_UDL
+      +tags: ['newsletter', 'marts', 'merge']
+      +access: public
+      +query_tag: 'dbt_newsletter_marts'
+      +docs:
+        node_color: "#9C27B0"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SNAPSHOT CONFIGURATIONS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+snapshots:
+  newsletter_poc:
+    +schema: DBT_UDL
+    +tags: ['newsletter', 'snapshot', 'scd2']
+    +query_tag: 'dbt_newsletter_snapshots'
