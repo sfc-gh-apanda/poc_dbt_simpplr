@@ -4,7 +4,7 @@ MODEL LOGGING MACROS
 ═══════════════════════════════════════════════════════════════════════════════
 
 Called as a global post-hook on every model via dbt_project.yml.
-Writes to COMMON_TENANT_DEV.DBT_EXECUTION_RUN_STATUS.DBT_MODEL_LOG.
+Writes to COMMON_TENANT_DEV.DBT_EXECUTION_RUN_STATS.DBT_MODEL_LOG.
 
 Prerequisites:
   Run setup/audit_setup.sql to create tracking tables.
@@ -20,7 +20,7 @@ Prerequisites:
         {% set batch_id = modules.datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S') ~ '_' ~ this.name %}
 
         {% set sql %}
-            INSERT INTO {{ target.database }}.{{ var('audit_schema', 'DBT_EXECUTION_RUN_STATUS') }}.DBT_MODEL_LOG (
+            INSERT INTO {{ target.database }}.{{ var('audit_schema', 'DBT_EXECUTION_RUN_STATS') }}.DBT_MODEL_LOG (
                 log_id,
                 run_id,
                 project_name,
@@ -52,7 +52,7 @@ Prerequisites:
                 {{ 'TRUE' if config.get("materialized") == 'incremental' else 'FALSE' }},
                 '{{ config.get("incremental_strategy", "default") }}'
             WHERE NOT EXISTS (
-                SELECT 1 FROM {{ target.database }}.{{ var('audit_schema', 'DBT_EXECUTION_RUN_STATUS') }}.DBT_MODEL_LOG
+                SELECT 1 FROM {{ target.database }}.{{ var('audit_schema', 'DBT_EXECUTION_RUN_STATS') }}.DBT_MODEL_LOG
                 WHERE log_id = '{{ log_id }}'
             );
         {% endset %}
@@ -69,7 +69,7 @@ Prerequisites:
         {% set batch_id = modules.datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S') ~ '_' ~ this.name %}
 
         {% set sql %}
-            INSERT INTO {{ target.database }}.{{ var('audit_schema', 'DBT_EXECUTION_RUN_STATUS') }}.DBT_MODEL_LOG (
+            INSERT INTO {{ target.database }}.{{ var('audit_schema', 'DBT_EXECUTION_RUN_STATS') }}.DBT_MODEL_LOG (
                 log_id, run_id, project_name, model_name,
                 schema_name, database_name, materialization,
                 batch_id, status, started_at, ended_at,
@@ -90,7 +90,7 @@ Prerequisites:
                 (SELECT COUNT(*) FROM {{ this }}),
                 {{ 'TRUE' if config.get("materialized") == 'incremental' else 'FALSE' }}
             WHERE NOT EXISTS (
-                SELECT 1 FROM {{ target.database }}.{{ var('audit_schema', 'DBT_EXECUTION_RUN_STATUS') }}.DBT_MODEL_LOG
+                SELECT 1 FROM {{ target.database }}.{{ var('audit_schema', 'DBT_EXECUTION_RUN_STATS') }}.DBT_MODEL_LOG
                 WHERE log_id = '{{ log_id }}'
             );
         {% endset %}

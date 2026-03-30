@@ -220,8 +220,25 @@ $$;
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════
--- 3. Ensure NEWSLETTER_HIST has extra publish tracking columns
+-- 3. Add dbt audit columns + publish tracking columns to NEWSLETTER_HIST
+--    These columns are present on FCT_NEWSLETTER (and therefore on
+--    UDL.NEWSLETTER after CLONE). The INSERT * requires HIST to match.
 -- ═══════════════════════════════════════════════════════════════════════════════
+
+ALTER TABLE UDL.NEWSLETTER_HIST ADD COLUMN IF NOT EXISTS
+    dbt_loaded_at TIMESTAMP_NTZ;
+
+ALTER TABLE UDL.NEWSLETTER_HIST ADD COLUMN IF NOT EXISTS
+    dbt_run_id VARCHAR(50);
+
+ALTER TABLE UDL.NEWSLETTER_HIST ADD COLUMN IF NOT EXISTS
+    dbt_batch_id VARCHAR(32);
+
+ALTER TABLE UDL.NEWSLETTER_HIST ADD COLUMN IF NOT EXISTS
+    dbt_source_model VARCHAR(100);
+
+ALTER TABLE UDL.NEWSLETTER_HIST ADD COLUMN IF NOT EXISTS
+    dbt_environment VARCHAR(20);
 
 ALTER TABLE UDL.NEWSLETTER_HIST ADD COLUMN IF NOT EXISTS
     published_by_run_id VARCHAR(100);

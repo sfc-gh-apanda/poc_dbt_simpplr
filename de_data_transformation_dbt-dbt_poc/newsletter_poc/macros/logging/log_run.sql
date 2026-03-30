@@ -4,7 +4,7 @@ RUN LOGGING MACROS
 ═══════════════════════════════════════════════════════════════════════════════
 
 Called by on-run-start / on-run-end hooks in dbt_project.yml.
-Writes to COMMON_TENANT_DEV.DBT_EXECUTION_RUN_STATUS.DBT_RUN_LOG.
+Writes to COMMON_TENANT_DEV.DBT_EXECUTION_RUN_STATS.DBT_RUN_LOG.
 
 Prerequisites:
   Run setup/audit_setup.sql to create tracking tables.
@@ -16,7 +16,7 @@ Prerequisites:
 {% macro log_run_start() %}
     {% if var('enable_audit_logging', true) %}
         {% set sql %}
-            INSERT INTO {{ target.database }}.{{ var('audit_schema', 'DBT_EXECUTION_RUN_STATUS') }}.DBT_RUN_LOG (
+            INSERT INTO {{ target.database }}.{{ var('audit_schema', 'DBT_EXECUTION_RUN_STATS') }}.DBT_RUN_LOG (
                 run_id,
                 project_name,
                 environment,
@@ -36,7 +36,7 @@ Prerequisites:
                 CURRENT_USER(),
                 CURRENT_ROLE()
             WHERE NOT EXISTS (
-                SELECT 1 FROM {{ target.database }}.{{ var('audit_schema', 'DBT_EXECUTION_RUN_STATUS') }}.DBT_RUN_LOG
+                SELECT 1 FROM {{ target.database }}.{{ var('audit_schema', 'DBT_EXECUTION_RUN_STATS') }}.DBT_RUN_LOG
                 WHERE run_id = '{{ invocation_id }}'
             );
         {% endset %}
@@ -49,7 +49,7 @@ Prerequisites:
 
 {% macro log_run_end() %}
     {% if var('enable_audit_logging', true) %}
-        {% set audit_db_schema = target.database ~ '.' ~ var('audit_schema', 'SIMPPLR_DBT_AUDIT') %}
+        {% set audit_db_schema = target.database ~ '.' ~ var('audit_schema', 'DBT_EXECUTION_RUN_STATS') %}
         {% set sql %}
             UPDATE {{ audit_db_schema }}.DBT_RUN_LOG
             SET
