@@ -19,7 +19,7 @@
 -- Based on Snowflake SKE: "Automating dbt Test Execution and Result Logging"
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-USE ROLE R_DEPLOYMENT_ADMIN_DEV;
+USE ROLE ACCOUNTADMIN;
 USE DATABASE COMMON_TENANT_DEV;
 USE SCHEMA DBT_EXECUTION_RUN_STATS;
 

@@ -3,7 +3,7 @@
 -- Run ONCE after account_setup.sql
 -- =============================================================
 
-USE ROLE R_DEPLOYMENT_ADMIN_DEV;
+USE ROLE ACCOUNTADMIN;
 USE DATABASE COMMON_TENANT_DEV;
 
 -- 1. Audit schema

@@ -10,7 +10,7 @@
 --   Archive processed raw records and purge from source tables.
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-USE ROLE R_DEPLOYMENT_ADMIN_DEV;
+USE ROLE ACCOUNTADMIN;
 USE DATABASE COMMON_TENANT_DEV;
 
 -- ═══════════════════════════════════════════════════════════════════════════════

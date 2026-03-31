@@ -15,7 +15,7 @@
 --   as a substitute for run_results.json.
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-USE ROLE R_DEPLOYMENT_ADMIN_DEV;
+USE ROLE ACCOUNTADMIN;
 USE DATABASE COMMON_TENANT_DEV;
 USE SCHEMA DBT_EXECUTION_RUN_STATS;
 
