@@ -21,7 +21,7 @@
 WITH source_data AS (
     SELECT * FROM {{ ref('int_newsletter_joined') }}
     {% if is_incremental() %}
-    WHERE created_datetime > (
+    WHERE created_datetime >= (
         SELECT COALESCE(MAX(dbt_loaded_at), '2000-01-01'::TIMESTAMP_NTZ)
         FROM {{ this }}
     )
