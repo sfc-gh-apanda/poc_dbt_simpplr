@@ -6,8 +6,8 @@
 --        Recommended chart type noted above each query.
 -- =============================================================
 
-USE DATABASE SIMPPLR_DBT_DEV;
-USE SCHEMA SIMPPLR_DBT_AUDIT;
+USE DATABASE COMMON_TENANT_DEV;
+USE SCHEMA DBT_EXECUTION_RUN_STATS;
 
 
 -- ╔═══════════════════════════════════════════════════════════════╗
@@ -604,7 +604,7 @@ SELECT
     DATEDIFF('minute', MAX(dbt_loaded_at), CURRENT_TIMESTAMP()) AS "Minutes Stale",
     IFF(DATEDIFF('minute', MAX(dbt_loaded_at), CURRENT_TIMESTAMP()) > 1440,
         'STALE', 'FRESH')                                    AS "Status"
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER
+FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER
 UNION ALL
 SELECT
     'wrk_newsletter_interaction',
@@ -613,7 +613,7 @@ SELECT
     DATEDIFF('minute', MAX(dbt_loaded_at), CURRENT_TIMESTAMP()),
     IFF(DATEDIFF('minute', MAX(dbt_loaded_at), CURRENT_TIMESTAMP()) > 1440,
         'STALE', 'FRESH')
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_INTERACTION
+FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_INTERACTION
 UNION ALL
 SELECT
     'wrk_newsletter_category',
@@ -622,7 +622,7 @@ SELECT
     DATEDIFF('minute', MAX(dbt_loaded_at), CURRENT_TIMESTAMP()),
     IFF(DATEDIFF('minute', MAX(dbt_loaded_at), CURRENT_TIMESTAMP()) > 1440,
         'STALE', 'FRESH')
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_CATEGORY
+FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_CATEGORY
 ORDER BY "Minutes Stale" DESC;
 
 -- ─────────────────────────────────────────────────────────────────
@@ -643,7 +643,7 @@ SELECT
         / NULLIF(COUNT(*), 0), 2)                            AS "% Soft Deleted",
     ROUND(SUM(IFF(active_flag, 1, 0)) * 100.0
         / NULLIF(COUNT(*), 0), 2)                            AS "% Active"
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER;
+FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER;
 
 -- ─────────────────────────────────────────────────────────────────
 -- G3. Snapshot (SCD-2) Tracking  [CHART: Table]
@@ -657,7 +657,7 @@ SELECT
     SUM(IFF(dbt_valid_to IS NULL, 1, 0))                     AS "Active Versions",
     MIN(dbt_valid_from)                                      AS "First Version",
     MAX(dbt_valid_from)                                      AS "Latest Version"
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_SNAPSHOTS.SNAP_NEWSLETTER
+FROM COMMON_TENANT_DEV.DBT_UDL.SNAP_NEWSLETTER
 GROUP BY 1, 2, 3
 ORDER BY "Total Versions" DESC
 LIMIT 50;
@@ -671,7 +671,7 @@ SELECT
     COUNT(*)                                                 AS "Newsletters",
     SUM(IFF(is_deleted, 1, 0))                               AS "Deleted",
     SUM(IFF(status_code != 'NLS000', 1, 0))                  AS "Mapped Status"
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER
+FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER
 GROUP BY 1, 2
 ORDER BY "Newsletters" DESC;
 
@@ -726,16 +726,16 @@ ORDER BY "Alert Type";
 -- ─────────────────────────────────────────────────────────────────
 SELECT
     'Newsletter'                                             AS "Entity",
-    (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_SOURCES.VW_ENL_NEWSLETTER)
+    (SELECT COUNT(*) FROM COMMON_TENANT_DEV.SHARED_SERVICES_STAGING.VW_ENL_NEWSLETTER)
                                                              AS "Source Rows",
-    (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_STAGING.STG_NEWSLETTER)
+    (SELECT COUNT(*) FROM COMMON_TENANT_DEV.UDL.STG_NEWSLETTER)
                                                              AS "Staging Rows",
-    (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER)
+    (SELECT COUNT(*) FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER)
                                                              AS "Mart Rows",
-    (SELECT COUNT(DISTINCT code) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_SOURCES.VW_ENL_NEWSLETTER
+    (SELECT COUNT(DISTINCT code) FROM COMMON_TENANT_DEV.SHARED_SERVICES_STAGING.VW_ENL_NEWSLETTER
      WHERE domain_payload:id::STRING IS NOT NULL)
                                                              AS "Source Distinct Codes",
-    (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER)
+    (SELECT COUNT(*) FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER)
                                                              AS "Mart Distinct Codes",
     IFF("Source Distinct Codes" = "Mart Distinct Codes",
         'MATCH', 'MISMATCH')                                 AS "Status"
@@ -744,36 +744,36 @@ UNION ALL
 
 SELECT
     'Newsletter Interaction',
-    (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_SOURCES.VW_ENL_NEWSLETTER_INTERACTION),
-    (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_STAGING.STG_NEWSLETTER_INTERACTION),
-    (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_INTERACTION),
+    (SELECT COUNT(*) FROM COMMON_TENANT_DEV.SHARED_SERVICES_STAGING.VW_ENL_NEWSLETTER_INTERACTION),
+    (SELECT COUNT(*) FROM COMMON_TENANT_DEV.UDL.STG_NEWSLETTER_INTERACTION),
+    (SELECT COUNT(*) FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_INTERACTION),
     (SELECT COUNT(DISTINCT domain_payload:id::STRING)
-     FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_SOURCES.VW_ENL_NEWSLETTER_INTERACTION
+     FROM COMMON_TENANT_DEV.SHARED_SERVICES_STAGING.VW_ENL_NEWSLETTER_INTERACTION
      WHERE domain_payload:id::STRING IS NOT NULL),
-    (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_INTERACTION),
+    (SELECT COUNT(*) FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_INTERACTION),
     IFF(
         (SELECT COUNT(DISTINCT domain_payload:id::STRING)
-         FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_SOURCES.VW_ENL_NEWSLETTER_INTERACTION
+         FROM COMMON_TENANT_DEV.SHARED_SERVICES_STAGING.VW_ENL_NEWSLETTER_INTERACTION
          WHERE domain_payload:id::STRING IS NOT NULL)
-        = (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_INTERACTION),
+        = (SELECT COUNT(*) FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_INTERACTION),
         'MATCH', 'MISMATCH')
 
 UNION ALL
 
 SELECT
     'Newsletter Category',
-    (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_SOURCES.VW_ENL_NEWSLETTER_CATEGORY),
-    (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_STAGING.STG_NEWSLETTER_CATEGORY),
-    (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_CATEGORY),
+    (SELECT COUNT(*) FROM COMMON_TENANT_DEV.SHARED_SERVICES_STAGING.VW_ENL_NEWSLETTER_CATEGORY),
+    (SELECT COUNT(*) FROM COMMON_TENANT_DEV.UDL.STG_NEWSLETTER_CATEGORY),
+    (SELECT COUNT(*) FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_CATEGORY),
     (SELECT COUNT(DISTINCT domain_payload:id::STRING)
-     FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_SOURCES.VW_ENL_NEWSLETTER_CATEGORY
+     FROM COMMON_TENANT_DEV.SHARED_SERVICES_STAGING.VW_ENL_NEWSLETTER_CATEGORY
      WHERE domain_payload:id::STRING IS NOT NULL),
-    (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_CATEGORY),
+    (SELECT COUNT(*) FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_CATEGORY),
     IFF(
         (SELECT COUNT(DISTINCT domain_payload:id::STRING)
-         FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_SOURCES.VW_ENL_NEWSLETTER_CATEGORY
+         FROM COMMON_TENANT_DEV.SHARED_SERVICES_STAGING.VW_ENL_NEWSLETTER_CATEGORY
          WHERE domain_payload:id::STRING IS NOT NULL)
-        = (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_CATEGORY),
+        = (SELECT COUNT(*) FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_CATEGORY),
         'MATCH', 'MISMATCH');
 
 
@@ -791,8 +791,8 @@ SELECT
         SUM(IFF(n.code IS NOT NULL, 1, 0)) * 100.0
         / NULLIF(COUNT(*), 0), 1
     )                                                        AS "Integrity %"
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_INTERACTION i
-LEFT JOIN SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER n
+FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_INTERACTION i
+LEFT JOIN COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER n
     ON i.tenant_code = n.tenant_code
    AND i.newsletter_code = n.code
 
@@ -807,8 +807,8 @@ SELECT
         SUM(IFF(nl.category_code = 'N/A' OR c.code IS NOT NULL, 1, 0)) * 100.0
         / NULLIF(COUNT(*), 0), 1
     )
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER nl
-LEFT JOIN SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_CATEGORY c
+FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER nl
+LEFT JOIN COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_CATEGORY c
     ON nl.tenant_code = c.tenant_code
    AND nl.category_code = c.code
 WHERE nl.category_code != 'N/A';
@@ -825,8 +825,8 @@ SELECT
     i.interaction_type_code                                  AS "Type",
     i.interaction_datetime                                   AS "Interaction At",
     'Newsletter not found in wrk_newsletter'                 AS "Issue"
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_INTERACTION i
-LEFT JOIN SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER n
+FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_INTERACTION i
+LEFT JOIN COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER n
     ON i.tenant_code = n.tenant_code
    AND i.newsletter_code = n.code
 WHERE n.code IS NULL
@@ -844,7 +844,7 @@ SELECT
     tenant_code                                              AS "Tenant",
     code                                                     AS "Code",
     COUNT(*)                                                 AS "Duplicate Count"
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER
+FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER
 GROUP BY 1, 2, 3
 HAVING COUNT(*) > 1
 
@@ -855,7 +855,7 @@ SELECT
     tenant_code,
     code,
     COUNT(*)
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_INTERACTION
+FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_INTERACTION
 GROUP BY 1, 2, 3
 HAVING COUNT(*) > 1
 
@@ -866,7 +866,7 @@ SELECT
     tenant_code,
     code,
     COUNT(*)
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_CATEGORY
+FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_CATEGORY
 GROUP BY 1, 2, 3
 HAVING COUNT(*) > 1
 
@@ -883,8 +883,8 @@ SELECT
     src.code                                                 AS "Code",
     src.kafka_timestamp                                      AS "Source Timestamp",
     'Not in wrk_newsletter'                                  AS "Gap"
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_STAGING.STG_NEWSLETTER src
-LEFT JOIN SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER tgt
+FROM COMMON_TENANT_DEV.UDL.STG_NEWSLETTER src
+LEFT JOIN COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER tgt
     ON src.tenant_code = tgt.tenant_code
    AND src.code = tgt.code
 WHERE tgt.code IS NULL
@@ -899,8 +899,8 @@ SELECT
     src.code,
     src.kafka_timestamp,
     'Not in wrk_newsletter_interaction'
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_STAGING.STG_NEWSLETTER_INTERACTION src
-LEFT JOIN SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_INTERACTION tgt
+FROM COMMON_TENANT_DEV.UDL.STG_NEWSLETTER_INTERACTION src
+LEFT JOIN COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_INTERACTION tgt
     ON src.tenant_code = tgt.tenant_code
    AND src.code = tgt.code
 WHERE tgt.code IS NULL
@@ -915,8 +915,8 @@ SELECT
     src.code,
     src.kafka_timestamp,
     'Not in wrk_newsletter_category'
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_STAGING.STG_NEWSLETTER_CATEGORY src
-LEFT JOIN SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_CATEGORY tgt
+FROM COMMON_TENANT_DEV.UDL.STG_NEWSLETTER_CATEGORY src
+LEFT JOIN COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_CATEGORY tgt
     ON src.tenant_code = tgt.tenant_code
    AND src.code = tgt.code
 WHERE tgt.code IS NULL
@@ -933,8 +933,8 @@ ORDER BY "Entity", "Source Timestamp" DESC;
 SELECT
     'Active in mart, missing in snapshot'                     AS "Check",
     COUNT(*)                                                 AS "Records"
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER m
-LEFT JOIN SIMPPLR_DBT_DEV.SIMPPLR_DBT_SNAPSHOTS.SNAP_NEWSLETTER s
+FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER m
+LEFT JOIN COMMON_TENANT_DEV.DBT_UDL.SNAP_NEWSLETTER s
     ON m.tenant_code = s.tenant_code
    AND m.code = s.code
    AND s.dbt_valid_to IS NULL
@@ -945,8 +945,8 @@ UNION ALL
 SELECT
     'Snapshot hash != mart hash (stale snapshot)',
     COUNT(*)
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER m
-INNER JOIN SIMPPLR_DBT_DEV.SIMPPLR_DBT_SNAPSHOTS.SNAP_NEWSLETTER s
+FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER m
+INNER JOIN COMMON_TENANT_DEV.DBT_UDL.SNAP_NEWSLETTER s
     ON m.tenant_code = s.tenant_code
    AND m.code = s.code
    AND s.dbt_valid_to IS NULL
@@ -959,7 +959,7 @@ SELECT
     ROUND(AVG(version_count), 1)
 FROM (
     SELECT tenant_code, code, COUNT(*) AS version_count
-    FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_SNAPSHOTS.SNAP_NEWSLETTER
+    FROM COMMON_TENANT_DEV.DBT_UDL.SNAP_NEWSLETTER
     GROUP BY 1, 2
 );
 
@@ -969,38 +969,38 @@ FROM (
 -- Single-row summary of all reconciliation checks
 -- ─────────────────────────────────────────────────────────────────
 SELECT
-    (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER)
-        + (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_INTERACTION)
-        + (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_CATEGORY)
+    (SELECT COUNT(*) FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER)
+        + (SELECT COUNT(*) FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_INTERACTION)
+        + (SELECT COUNT(*) FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_CATEGORY)
                                                              AS "Total Mart Records",
 
-    (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_STAGING.STG_NEWSLETTER src
-     LEFT JOIN SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER tgt
+    (SELECT COUNT(*) FROM COMMON_TENANT_DEV.UDL.STG_NEWSLETTER src
+     LEFT JOIN COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER tgt
          ON src.tenant_code = tgt.tenant_code AND src.code = tgt.code
      WHERE tgt.code IS NULL AND src.code IS NOT NULL AND src.tenant_code IS NOT NULL)
-        + (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_STAGING.STG_NEWSLETTER_INTERACTION src
-           LEFT JOIN SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_INTERACTION tgt
+        + (SELECT COUNT(*) FROM COMMON_TENANT_DEV.UDL.STG_NEWSLETTER_INTERACTION src
+           LEFT JOIN COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_INTERACTION tgt
                ON src.tenant_code = tgt.tenant_code AND src.code = tgt.code
            WHERE tgt.code IS NULL AND src.code IS NOT NULL AND src.tenant_code IS NOT NULL)
-        + (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_STAGING.STG_NEWSLETTER_CATEGORY src
-           LEFT JOIN SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_CATEGORY tgt
+        + (SELECT COUNT(*) FROM COMMON_TENANT_DEV.UDL.STG_NEWSLETTER_CATEGORY src
+           LEFT JOIN COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_CATEGORY tgt
                ON src.tenant_code = tgt.tenant_code AND src.code = tgt.code
            WHERE tgt.code IS NULL AND src.code IS NOT NULL AND src.tenant_code IS NOT NULL)
                                                              AS "Missing from Mart",
 
     (SELECT COUNT(*) FROM (
-        SELECT tenant_code, code FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER
+        SELECT tenant_code, code FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER
         GROUP BY 1, 2 HAVING COUNT(*) > 1
         UNION ALL
-        SELECT tenant_code, code FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_INTERACTION
+        SELECT tenant_code, code FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_INTERACTION
         GROUP BY 1, 2 HAVING COUNT(*) > 1
         UNION ALL
-        SELECT tenant_code, code FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_CATEGORY
+        SELECT tenant_code, code FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_CATEGORY
         GROUP BY 1, 2 HAVING COUNT(*) > 1
     ))                                                       AS "Duplicate Keys",
 
-    (SELECT COUNT(*) FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_INTERACTION i
-     LEFT JOIN SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER n
+    (SELECT COUNT(*) FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_INTERACTION i
+     LEFT JOIN COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER n
          ON i.tenant_code = n.tenant_code AND i.newsletter_code = n.code
      WHERE n.code IS NULL)
                                                              AS "Orphaned Interactions",

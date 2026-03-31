@@ -18,7 +18,7 @@ The pipeline is organized into **five distinct layers**, each with a clear purpo
                   │                  │                  │
                   ▼                  ▼                  ▼
   ┌─────────────────────────────────────────────────────────────────────┐
-  │  SOURCES  (SIMPPLR_DBT_SOURCES)                                    │
+  │  SOURCES  (SHARED_SERVICES_STAGING)                                │
   │                                                                     │
   │  VW_ENL_NEWSLETTER    VW_ENL_NEWSLETTER    VW_ENL_NEWSLETTER       │
   │                       _INTERACTION          _CATEGORY              │
@@ -28,7 +28,7 @@ The pipeline is organized into **five distinct layers**, each with a clear purpo
                   │                  │                  │
                   ▼                  ▼                  ▼
   ┌─────────────────────────────────────────────────────────────────────┐
-  │  STAGING  (SIMPPLR_DBT_STAGING)                    materialized: view │
+  │  STAGING  (UDL)                                    materialized: table │
   │                                                                     │
   │  stg_newsletter             Parse newsletter JSON, extract          │
   │  stg_newsletter_recipient   LATERAL FLATTEN recipients, LISTAGG     │
@@ -55,7 +55,7 @@ The pipeline is organized into **five distinct layers**, each with a clear purpo
               │                     │                  │
               ▼                     ▼                  ▼
   ┌─────────────────────────────────────────────────────────────────────┐
-  │  SEEDS  (SIMPPLR_DBT_SEEDS)               6 Reference CSV Tables   │
+  │  SEEDS  (UDL)                              6 Reference CSV Tables   │
   │  ref_newsletter_status  ·  ref_newsletter_recipient_type           │
   │  ref_newsletter_interaction_type  ·  ref_newsletter_delivery_...   │
   │  ref_newsletter_click_type  ·  ref_newsletter_block_type           │
@@ -63,7 +63,7 @@ The pipeline is organized into **five distinct layers**, each with a clear purpo
   │  Used by marts for code lookups (e.g. status → status_code)        │
   ├─────────────────────────────────────────────────────────────────────┤
   │                                                                     │
-  │  MARTS  (SIMPPLR_DBT_MARTS)               materialized: incremental│
+  │  MARTS  (DBT_UDL)                          materialized: incremental│
   │                                             strategy: merge         │
   │                                                                     │
   │  wrk_newsletter              ← int_newsletter_joined + 2 seeds     │
@@ -76,7 +76,7 @@ The pipeline is organized into **five distinct layers**, each with a clear purpo
                   │
                   ▼
   ┌─────────────────────────────────────────────────────────────────────┐
-  │  SNAPSHOTS  (SIMPPLR_DBT_SNAPSHOTS)        SCD Type 2               │
+  │  SNAPSHOTS  (DBT_UDL)                       SCD Type 2               │
   │                                                                     │
   │  snap_newsletter  ← wrk_newsletter                                 │
   │  Tracks full version history using check strategy on hash_value     │
@@ -92,7 +92,7 @@ The pipeline is organized into **five distinct layers**, each with a clear purpo
 
 | Schema | Tables | Description |
 |--------|--------|-------------|
-| `SIMPPLR_DBT_SOURCES` | `VW_ENL_NEWSLETTER`, `VW_ENL_NEWSLETTER_INTERACTION`, `VW_ENL_NEWSLETTER_CATEGORY` | Reconstructed Kafka messages. Each row contains a `HEADER` (tenant info as VARIANT) and `DOMAIN_PAYLOAD` (full event JSON as VARIANT). |
+| `SHARED_SERVICES_STAGING` | `VW_ENL_NEWSLETTER`, `VW_ENL_NEWSLETTER_INTERACTION`, `VW_ENL_NEWSLETTER_CATEGORY` | Reconstructed Kafka messages. Each row contains a `HEADER` (tenant info as VARIANT) and `DOMAIN_PAYLOAD` (full event JSON as VARIANT). |
 
 **Design rationale:** These mirror the existing production staging views. Data arrives here via Kafka ingestion — the dbt pipeline reads from this point forward.
 
@@ -110,7 +110,7 @@ The pipeline is organized into **five distinct layers**, each with a clear purpo
 | `stg_newsletter_interaction` | View | Parses interaction details from VARIANT. Classifies `device_type_code` from `user_agent` string (Desktop, Mobile, Tablet, Bot, Unknown). |
 | `stg_newsletter_category` | View | Parses category fields (code, name, created timestamp) from VARIANT. Computes change-detection hash. |
 
-**Design rationale:** Materialized as **views** for zero storage cost — these are lightweight SQL transformations computed on read. Each staging model has a single responsibility: parse one source table. Hash computation here enables efficient deduplication downstream.
+**Design rationale:** Materialized as **tables** for predictable performance and consistent row counts during downstream processing. Each staging model has a single responsibility: parse one source table. Hash computation here enables efficient deduplication downstream. Full-load mode unions raw tables with archive tables for complete history.
 
 ---
 
@@ -184,7 +184,7 @@ on-run-start  →  log_run_start()   →  DBT_RUN_LOG (insert)
 on-run-end    →  log_run_end()     →  DBT_RUN_LOG (update with duration, status, counts)
 ```
 
-All logging writes to `SIMPPLR_DBT_AUDIT` schema. Four summary views are provided:
+All logging writes to `DBT_EXECUTION_RUN_STATS` schema. Four summary views are provided:
 - `V_DAILY_RUN_SUMMARY` — runs per day with pass/fail rates
 - `V_MODEL_EXECUTION_HISTORY` — per-model timing trends
 - `V_RECENT_FAILURES` — last 50 failures for triage
@@ -203,16 +203,15 @@ All logging writes to `SIMPPLR_DBT_AUDIT` schema. Four summary views are provide
 
 ### Schema Isolation
 
-All schemas use the `SIMPPLR_DBT_*` prefix for clear separation from existing architecture:
+Schemas are aligned with the existing architecture for clear separation:
 
 | Schema | Purpose |
 |--------|---------|
-| `SIMPPLR_DBT_SOURCES` | Raw Kafka data (input) |
-| `SIMPPLR_DBT_STAGING` | Parsed views |
-| `SIMPPLR_DBT_SEEDS` | Reference lookup tables |
-| `SIMPPLR_DBT_MARTS` | Final fact tables (output) |
-| `SIMPPLR_DBT_SNAPSHOTS` | SCD-2 history |
-| `SIMPPLR_DBT_AUDIT` | Run & model logs |
+| `SHARED_SERVICES_STAGING` | Raw Kafka data (input) |
+| `UDL` | Staging tables, seeds, user-facing published tables |
+| `DBT_UDL` | dbt work tables (wrk_*), snapshots |
+| `UDL_BATCH_PROCESS` | Stored procedures (publish, archive, retry) |
+| `DBT_EXECUTION_RUN_STATS` | Run & model logs, test results, build artifacts |
 
 ---
 

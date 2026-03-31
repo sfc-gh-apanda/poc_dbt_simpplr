@@ -6,8 +6,8 @@
 -- Snowsight worksheets, or piped into any BI tool.
 -- =============================================================
 
-USE DATABASE SIMPPLR_DBT_DEV;
-USE SCHEMA SIMPPLR_DBT_AUDIT;
+USE DATABASE COMMON_TENANT_DEV;
+USE SCHEMA DBT_EXECUTION_RUN_STATS;
 
 
 -- ═══════════════════════════════════════════════════════════════
@@ -419,7 +419,7 @@ SELECT
     DATEDIFF('minute',
         MAX(dbt_loaded_at),
         CURRENT_TIMESTAMP())     AS minutes_since_last_load
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER
+FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER
 
 UNION ALL
 
@@ -428,7 +428,7 @@ SELECT
     MAX(dbt_loaded_at),
     COUNT(*),
     DATEDIFF('minute', MAX(dbt_loaded_at), CURRENT_TIMESTAMP())
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_INTERACTION
+FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_INTERACTION
 
 UNION ALL
 
@@ -437,7 +437,7 @@ SELECT
     MAX(dbt_loaded_at),
     COUNT(*),
     DATEDIFF('minute', MAX(dbt_loaded_at), CURRENT_TIMESTAMP())
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_CATEGORY
+FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER_CATEGORY
 ORDER BY minutes_since_last_load DESC;
 
 -- 7b. Data quality overview (null rates on key columns)
@@ -457,7 +457,7 @@ SELECT
           / NULLIF(COUNT(*), 0), 2)                          AS pct_null_hash,
     ROUND(SUM(IFF(is_deleted, 1, 0)) * 100.0
           / NULLIF(COUNT(*), 0), 2)                          AS pct_deleted
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER;
+FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER;
 
 
 -- ═══════════════════════════════════════════════════════════════
