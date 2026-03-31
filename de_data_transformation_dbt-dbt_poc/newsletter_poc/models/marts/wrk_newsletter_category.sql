@@ -6,8 +6,8 @@
         on_schema_change='fail',
         merge_exclude_columns=['id'],
         schema='DBT_UDL',
-        tags=['newsletter_category', 'fct', 'merge'],
-        query_tag='dbt_fct_newsletter_category',
+        tags=['newsletter_category', 'wrk', 'merge'],
+        query_tag='dbt_wrk_newsletter_category',
         post_hook=["{{ log_model_with_row_count() }}"]
     )
 }}

@@ -54,6 +54,6 @@ SELECT
     recipient_name,
     actual_delivery_system_type,
     dbt_loaded_at
-FROM {{ ref('fct_newsletter') }}
+FROM {{ ref('wrk_newsletter') }}
 
 {% endsnapshot %}

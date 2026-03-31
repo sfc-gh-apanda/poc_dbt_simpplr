@@ -413,37 +413,37 @@ ORDER BY 1 DESC;
 -- 7a. Data freshness per mart table
 CREATE OR REPLACE VIEW V_DATA_FRESHNESS AS
 SELECT
-    'fct_newsletter'             AS model_name,
+    'wrk_newsletter'             AS model_name,
     MAX(dbt_loaded_at)           AS last_loaded_at,
     COUNT(*)                     AS total_rows,
     DATEDIFF('minute',
         MAX(dbt_loaded_at),
         CURRENT_TIMESTAMP())     AS minutes_since_last_load
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.FCT_NEWSLETTER
+FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER
 
 UNION ALL
 
 SELECT
-    'fct_newsletter_interaction',
+    'wrk_newsletter_interaction',
     MAX(dbt_loaded_at),
     COUNT(*),
     DATEDIFF('minute', MAX(dbt_loaded_at), CURRENT_TIMESTAMP())
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.FCT_NEWSLETTER_INTERACTION
+FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_INTERACTION
 
 UNION ALL
 
 SELECT
-    'fct_newsletter_category',
+    'wrk_newsletter_category',
     MAX(dbt_loaded_at),
     COUNT(*),
     DATEDIFF('minute', MAX(dbt_loaded_at), CURRENT_TIMESTAMP())
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.FCT_NEWSLETTER_CATEGORY
+FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER_CATEGORY
 ORDER BY minutes_since_last_load DESC;
 
 -- 7b. Data quality overview (null rates on key columns)
 CREATE OR REPLACE VIEW V_DATA_QUALITY_NEWSLETTER AS
 SELECT
-    'fct_newsletter'                                         AS model_name,
+    'wrk_newsletter'                                         AS model_name,
     COUNT(*)                                                 AS total_rows,
     ROUND(SUM(IFF(tenant_code = 'N/A', 1, 0)) * 100.0
           / NULLIF(COUNT(*), 0), 2)                          AS pct_unknown_tenant,
@@ -457,7 +457,7 @@ SELECT
           / NULLIF(COUNT(*), 0), 2)                          AS pct_null_hash,
     ROUND(SUM(IFF(is_deleted, 1, 0)) * 100.0
           / NULLIF(COUNT(*), 0), 2)                          AS pct_deleted
-FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.FCT_NEWSLETTER;
+FROM SIMPPLR_DBT_DEV.SIMPPLR_DBT_MARTS.WRK_NEWSLETTER;
 
 
 -- ═══════════════════════════════════════════════════════════════

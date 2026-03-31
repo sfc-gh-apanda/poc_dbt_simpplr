@@ -66,9 +66,9 @@ The pipeline is organized into **five distinct layers**, each with a clear purpo
   │  MARTS  (SIMPPLR_DBT_MARTS)               materialized: incremental│
   │                                             strategy: merge         │
   │                                                                     │
-  │  fct_newsletter              ← int_newsletter_joined + 2 seeds     │
-  │  fct_newsletter_interaction  ← stg_interaction + 5 seeds           │
-  │  fct_newsletter_category     ← stg_category (self-contained)       │
+  │  wrk_newsletter              ← int_newsletter_joined + 2 seeds     │
+  │  wrk_newsletter_interaction  ← stg_interaction + 5 seeds           │
+  │  wrk_newsletter_category     ← stg_category (self-contained)       │
   │                                                                     │
   │  Deduplication · Reference enrichment · Null handling               │
   │  Audit columns · Schema contracts · Incremental merge               │
@@ -78,7 +78,7 @@ The pipeline is organized into **five distinct layers**, each with a clear purpo
   ┌─────────────────────────────────────────────────────────────────────┐
   │  SNAPSHOTS  (SIMPPLR_DBT_SNAPSHOTS)        SCD Type 2               │
   │                                                                     │
-  │  snap_newsletter  ← fct_newsletter                                 │
+  │  snap_newsletter  ← wrk_newsletter                                 │
   │  Tracks full version history using check strategy on hash_value     │
   │  Maintains dbt_valid_from / dbt_valid_to for historical analysis    │
   └─────────────────────────────────────────────────────────────────────┘
@@ -128,9 +128,9 @@ The pipeline is organized into **five distinct layers**, each with a clear purpo
 
 | Model | Materialization | Unique Key | Key Logic |
 |-------|-----------------|------------|-----------|
-| `fct_newsletter` | Incremental (merge) | `(tenant_code, code)` | Hash-based deduplication against existing records. Reference table lookups for `status_code` and `recipient_type_code`. Tenant-aware ID prefixing for `creator_id` / `modifier_id`. Null-safe `COALESCE` defaults. Post-hook updates `actual_delivery_system_type` from new interactions. |
-| `fct_newsletter_interaction` | Incremental (merge) | `(tenant_code, code)` | Latest-version ranking. Five reference table joins (interaction type, delivery system, recipient type, click type, block type). Device type classification. Tenant-aware recipient code prefixing. |
-| `fct_newsletter_category` | Incremental (merge) | `(tenant_code, code)` | Latest-version ranking. Data source derivation. Null-safe defaults. Simplest of the three entities. |
+| `wrk_newsletter` | Incremental (merge) | `(tenant_code, code)` | Hash-based deduplication against existing records. Reference table lookups for `status_code` and `recipient_type_code`. Tenant-aware ID prefixing for `creator_id` / `modifier_id`. Null-safe `COALESCE` defaults. Post-hook updates `actual_delivery_system_type` from new interactions. Published as `UDL.NEWSLETTER`. |
+| `wrk_newsletter_interaction` | Incremental (merge) | `(tenant_code, code)` | Latest-version ranking. Five reference table joins (interaction type, delivery system, recipient type, click type, block type). Device type classification. Tenant-aware recipient code prefixing. Published as `UDL.NEWSLETTER_INTERACTION`. |
+| `wrk_newsletter_category` | Incremental (merge) | `(tenant_code, code)` | Latest-version ranking. Data source derivation. Null-safe defaults. Simplest of the three entities. Published as `UDL.NEWSLETTER_CATEGORY`. |
 
 **Design rationale:** Materialized as **incremental with merge strategy** — only new/changed records (identified by hash comparison) are processed on each run. This mirrors the existing Scala pipeline's deduplication-then-merge pattern while being significantly simpler to maintain.
 
@@ -153,7 +153,7 @@ The pipeline is organized into **five distinct layers**, each with a clear purpo
 |-------|----------|-----------------|---------|
 | `snap_newsletter` | Check | `hash_value`, `actual_delivery_system_type` | Maintains full SCD Type 2 history. When either tracked column changes, the current record is closed (`dbt_valid_to` set) and a new version is inserted. Supports `invalidate_hard_deletes` for tracking deletions. |
 
-**Design rationale:** Only `fct_newsletter` requires historical tracking (mirroring the existing `NEWSLETTER_HIST` table). The **check strategy** on the hash column efficiently captures any business-column change in a single comparison, while `actual_delivery_system_type` is tracked separately since it can change independently via post-hook updates.
+**Design rationale:** Only `wrk_newsletter` requires historical tracking (mirroring the existing `NEWSLETTER_HIST` table). The **check strategy** on the hash column efficiently captures any business-column change in a single comparison, while `actual_delivery_system_type` is tracked separately since it can change independently via post-hook updates. The snapshot is published as `UDL.NEWSLETTER_SCD2` via clone+swap alongside the other tables.
 
 ---
 

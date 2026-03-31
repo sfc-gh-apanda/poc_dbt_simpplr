@@ -9,8 +9,8 @@
         merge_exclude_columns=['id'],
         schema='DBT_UDL',
         cluster_by=['SUBSTRING(tenant_code, -5)'],
-        tags=['newsletter', 'fct', 'merge'],
-        query_tag='dbt_fct_newsletter',
+        tags=['newsletter', 'wrk', 'merge'],
+        query_tag='dbt_wrk_newsletter',
         post_hook=[
             "{{ log_model_with_row_count() }}",
             "{% if is_incremental() %}UPDATE {{ this }} t SET t.actual_delivery_system_type = ias.actual_delivery_system_type, t.updated_by = CURRENT_USER(), t.updated_datetime = CURRENT_TIMESTAMP() FROM {{ ref('stg_newsletter_interaction_summary') }} ias WHERE t.tenant_code = ias.int_tenant_code AND t.code = ias.int_newsletter_code AND (t.actual_delivery_system_type IS NULL OR t.actual_delivery_system_type != ias.actual_delivery_system_type){% endif %}"

@@ -1,7 +1,7 @@
 select * from udl.newsletter;
 select * from udl.newsletter_hist;
 
-select * from dbt_udl.fct_newsletter;
+select * from dbt_udl.wrk_newsletter;
 select * from dbt_udl.snap_newsletter;
 
 select * from dbt_execution_run_stats.dbt_model_log;

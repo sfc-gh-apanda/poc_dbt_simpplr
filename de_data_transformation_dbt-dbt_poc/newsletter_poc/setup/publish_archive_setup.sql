@@ -4,7 +4,7 @@
 --
 -- PRC_DBT_PUBLISH_TO_TARGET:
 --   Clone+Swap from DBT_UDL (dbt work tables) → UDL (user-facing) atomically.
---   All 3 entities + NEWSLETTER_HIST in a single transaction.
+--   All 3 entities + NEWSLETTER_SCD2 + NEWSLETTER_HIST in a single transaction.
 --
 -- PRC_DBT_ARCHIVE_RAW_DATA:
 --   Archive processed raw records and purge from source tables.
@@ -15,7 +15,7 @@ USE DATABASE COMMON_TENANT_DEV;
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- 1. PRC_DBT_PUBLISH_TO_TARGET
---    Clone+Swap: DBT_UDL.FCT_* → UDL.* (zero-copy, atomic)
+--    Clone+Swap: DBT_UDL.WRK_* → UDL.* (zero-copy, atomic)
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 CREATE OR REPLACE PROCEDURE UDL_BATCH_PROCESS.PRC_DBT_PUBLISH_TO_TARGET(
@@ -32,25 +32,30 @@ DECLARE
     v_nlc_count INTEGER;
 BEGIN
 
-    SELECT COUNT(*) INTO v_nl_count  FROM DBT_UDL.FCT_NEWSLETTER;
-    SELECT COUNT(*) INTO v_nli_count FROM DBT_UDL.FCT_NEWSLETTER_INTERACTION;
-    SELECT COUNT(*) INTO v_nlc_count FROM DBT_UDL.FCT_NEWSLETTER_CATEGORY;
+    SELECT COUNT(*) INTO v_nl_count  FROM DBT_UDL.WRK_NEWSLETTER;
+    SELECT COUNT(*) INTO v_nli_count FROM DBT_UDL.WRK_NEWSLETTER_INTERACTION;
+    SELECT COUNT(*) INTO v_nlc_count FROM DBT_UDL.WRK_NEWSLETTER_CATEGORY;
 
     BEGIN TRANSACTION;
 
     -- Newsletter: clone work table → user-facing table
     CREATE OR REPLACE TABLE UDL.NEWSLETTER
-        CLONE DBT_UDL.FCT_NEWSLETTER
+        CLONE DBT_UDL.WRK_NEWSLETTER
         COPY GRANTS;
 
     -- Newsletter Interaction: clone work table → user-facing table
     CREATE OR REPLACE TABLE UDL.NEWSLETTER_INTERACTION
-        CLONE DBT_UDL.FCT_NEWSLETTER_INTERACTION
+        CLONE DBT_UDL.WRK_NEWSLETTER_INTERACTION
         COPY GRANTS;
 
     -- Newsletter Category: clone work table → user-facing table
     CREATE OR REPLACE TABLE UDL.NEWSLETTER_CATEGORY
-        CLONE DBT_UDL.FCT_NEWSLETTER_CATEGORY
+        CLONE DBT_UDL.WRK_NEWSLETTER_CATEGORY
+        COPY GRANTS;
+
+    -- Newsletter SCD2: clone snapshot → user-facing SCD2 history table
+    CREATE OR REPLACE TABLE UDL.NEWSLETTER_SCD2
+        CLONE DBT_UDL.SNAP_NEWSLETTER
         COPY GRANTS;
 
     -- Newsletter History: append current state to history table
@@ -221,7 +226,7 @@ $$;
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- 3. Add dbt audit columns + publish tracking columns to NEWSLETTER_HIST
---    These columns are present on FCT_NEWSLETTER (and therefore on
+--    These columns are present on WRK_NEWSLETTER (and therefore on
 --    UDL.NEWSLETTER after CLONE). The INSERT * requires HIST to match.
 -- ═══════════════════════════════════════════════════════════════════════════════
 

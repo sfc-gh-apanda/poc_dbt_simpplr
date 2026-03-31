@@ -11,15 +11,15 @@
     )
 }}
 
-SELECT 'fct_newsletter' AS model, COUNT(*) AS row_count
-FROM {{ ref('fct_newsletter') }}
+SELECT 'wrk_newsletter' AS model, COUNT(*) AS row_count
+FROM {{ ref('wrk_newsletter') }}
 
 UNION ALL
 
-SELECT 'fct_newsletter_interaction', COUNT(*)
-FROM {{ ref('fct_newsletter_interaction') }}
+SELECT 'wrk_newsletter_interaction', COUNT(*)
+FROM {{ ref('wrk_newsletter_interaction') }}
 
 UNION ALL
 
-SELECT 'fct_newsletter_category', COUNT(*)
-FROM {{ ref('fct_newsletter_category') }}
+SELECT 'wrk_newsletter_category', COUNT(*)
+FROM {{ ref('wrk_newsletter_category') }}

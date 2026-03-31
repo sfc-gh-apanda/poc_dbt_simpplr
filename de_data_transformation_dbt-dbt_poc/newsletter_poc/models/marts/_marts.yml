@@ -2,13 +2,13 @@ version: 2
 
 models:
   # ═══════════════════════════════════════════════════════════════════════
-  # fct_newsletter — Latest newsletter snapshot (mirrors UDL.NEWSLETTER)
+  # wrk_newsletter — Newsletter work table (published as UDL.NEWSLETTER)
   # ═══════════════════════════════════════════════════════════════════════
-  - name: fct_newsletter
+  - name: wrk_newsletter
     description: >
-      Final newsletter fact table — the "latest and greatest" snapshot of each newsletter.
+      Newsletter work table — the "latest and greatest" snapshot of each newsletter.
       Incrementally merged on (tenant_code, code). Enriched with reference table lookups
-      for status and recipient type. Mirrors the structure of UDL.NEWSLETTER.
+      for status and recipient type. Published as UDL.NEWSLETTER via clone+swap.
     config:
       contract:
         enforced: true
@@ -142,14 +142,14 @@ models:
             - code
 
   # ═══════════════════════════════════════════════════════════════════════
-  # fct_newsletter_interaction — Latest interaction per event
+  # wrk_newsletter_interaction — Interaction work table (published as UDL.NEWSLETTER_INTERACTION)
   # ═══════════════════════════════════════════════════════════════════════
-  - name: fct_newsletter_interaction
+  - name: wrk_newsletter_interaction
     description: >
-      Final newsletter interaction fact table. One row per interaction event (latest version).
+      Newsletter interaction work table. One row per interaction event (latest version).
       Incrementally merged on (tenant_code, code). Enriched with 5 reference table lookups
       (interaction type, delivery system, recipient type, click type, block type).
-      Mirrors the structure of UDL.NEWSLETTER_INTERACTION.
+      Published as UDL.NEWSLETTER_INTERACTION via clone+swap.
     config:
       contract:
         enforced: true
@@ -272,13 +272,13 @@ models:
             - code
 
   # ═══════════════════════════════════════════════════════════════════════
-  # fct_newsletter_category — Latest category per code
+  # wrk_newsletter_category — Category work table (published as UDL.NEWSLETTER_CATEGORY)
   # ═══════════════════════════════════════════════════════════════════════
-  - name: fct_newsletter_category
+  - name: wrk_newsletter_category
     description: >
-      Final newsletter category dimension table. One row per category (latest version).
+      Newsletter category work table. One row per category (latest version).
       Incrementally merged on (tenant_code, code). Simple entity with
-      code, name, and creation timestamp. Mirrors UDL.NEWSLETTER_CATEGORY.
+      code, name, and creation timestamp. Published as UDL.NEWSLETTER_CATEGORY via clone+swap.
     config:
       contract:
         enforced: true
@@ -360,9 +360,9 @@ models:
   # ═══════════════════════════════════════════════════════════════════════
   - name: pipeline_complete
     description: >
-      Sentinel model that depends on all 3 mart models via ref(). Only runs
-      after all marts complete successfully. Post-hooks perform:
-      1. Atomic clone+swap publish from DBT_UDL → UDL (all entities + NEWSLETTER_HIST)
+      Sentinel model that depends on all 3 work models via ref(). Only runs
+      after all wrk_* models complete successfully. Post-hooks perform:
+      1. Atomic clone+swap publish from DBT_UDL → UDL (all entities + NEWSLETTER_HIST + NEWSLETTER_SCD2)
       2. Archive processed raw records from ENL_* → ENL_*_ARCHIVE (if enabled)
     columns:
       - name: model

@@ -7,8 +7,8 @@
         merge_exclude_columns=['id'],
         schema='DBT_UDL',
         cluster_by=['SUBSTRING(tenant_code, -5)'],
-        tags=['newsletter_interaction', 'fct', 'merge'],
-        query_tag='dbt_fct_newsletter_interaction',
+        tags=['newsletter_interaction', 'wrk', 'merge'],
+        query_tag='dbt_wrk_newsletter_interaction',
         post_hook=["{{ log_model_with_row_count() }}"]
     )
 }}
