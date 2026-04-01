@@ -5,10 +5,10 @@
 # FEATURES:
 #   - Audit columns (dbt_run_id, dbt_batch_id, dbt_loaded_at, dbt_source_model)
 #   - Row hash for change detection (entity-specific, Scala-compatible)
-#   - Incremental merge with hash-based deduplication
+#   - Delta-only work tables with hash-based deduplication against UDL
 #   - Processing tracking (run log, model log)
 #   - Automated logging via hooks
-#   - SCD-2 snapshots for newsletter history
+#   - HIST-as-master SCD-2 pattern (NEWSLETTER_HIST accumulator)
 #   - Schema contracts on mart models
 #   - dbt_expectations for data quality
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -23,7 +23,7 @@ analysis-paths: ["analyses"]
 test-paths: ["tests"]
 seed-paths: ["seeds"]
 macro-paths: ["macros"]
-snapshot-paths: ["snapshots"]
+snapshot-paths: []
 
 clean-targets:
   - "target"
@@ -58,7 +58,7 @@ vars:
 
   enable_row_count_tracking: true
 
-  # Publish: clone+swap DBT_UDL → UDL atomically after all marts complete
+  # Publish: HIST-as-master pattern — wrk delta → NEWSLETTER_HIST → UDL tables
   enable_publish: true
 
   # Archive: move processed raw records to archive tables after publish
@@ -110,26 +110,14 @@ models:
         node_color: "#FF9800"
 
     # ═══════════════════════════════════════════════════════════════
-    # MARTS LAYER (Public — downstream consumers)
+    # MARTS LAYER (Public — delta-only work tables)
     # ═══════════════════════════════════════════════════════════════
     marts:
-      +materialized: incremental
+      +materialized: table
       +transient: false
-      +on_schema_change: fail
       +schema: DBT_UDL
-      +tags: ['newsletter', 'marts', 'merge']
+      +tags: ['newsletter', 'marts', 'delta']
       +access: public
       +query_tag: 'dbt_newsletter_marts'
       +docs:
         node_color: "#9C27B0"
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# SNAPSHOT CONFIGURATIONS
-# ═══════════════════════════════════════════════════════════════════════════════
-
-snapshots:
-  newsletter_poc:
-    +schema: DBT_UDL
-    +transient: false
-    +tags: ['newsletter', 'snapshot', 'scd2']
-    +query_tag: 'dbt_newsletter_snapshots'

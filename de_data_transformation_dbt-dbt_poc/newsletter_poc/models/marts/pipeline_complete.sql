@@ -23,8 +23,3 @@ UNION ALL
 
 SELECT 'wrk_newsletter_category', COUNT(*)
 FROM {{ ref('wrk_newsletter_category') }}
-
-UNION ALL
-
-SELECT 'snap_newsletter', COUNT(*)
-FROM {{ ref('snap_newsletter') }}

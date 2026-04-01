@@ -63,7 +63,7 @@ ORDER BY kafka_timestamp;
 
 -- 1C. Confirm target tables do NOT exist yet
 SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES
-WHERE TABLE_SCHEMA = 'DBT_UDL' AND TABLE_NAME IN ('WRK_NEWSLETTER', 'WRK_NEWSLETTER_INTERACTION', 'WRK_NEWSLETTER_CATEGORY', 'SNAP_NEWSLETTER');
+WHERE TABLE_SCHEMA = 'DBT_UDL' AND TABLE_NAME IN ('WRK_NEWSLETTER', 'WRK_NEWSLETTER_INTERACTION', 'WRK_NEWSLETTER_CATEGORY');
 -- EXPECTED: 0 rows (tables don't exist before first build)
 
 
@@ -97,17 +97,18 @@ FROM DBT_UDL.WRK_NEWSLETTER
 WHERE code = '85db08a2-3579-49b8-b4a4-1d80fd9021a7';
 -- EXPECTED: 1 row, name = 'Copy of test' (the MODIFIED version, not 'test')
 
--- 1F. SCD-2 snapshot — initial state (all records active, no history)
+-- 1F. NEWSLETTER_HIST — initial state (all records active, no historical versions)
 SELECT
     tenant_code || '|' || code AS business_key,
     name,
     hash_value,
-    dbt_valid_from,
-    dbt_valid_to,
-    IFF(dbt_valid_to IS NULL, 'CURRENT', 'HISTORICAL') AS version_status
-FROM DBT_UDL.SNAP_NEWSLETTER
-ORDER BY business_key, dbt_valid_from;
--- EXPECTED: 4 rows, all with dbt_valid_to = NULL (all CURRENT, no history yet)
+    active_flag,
+    active_date,
+    inactive_date,
+    IFF(active_flag, 'ACTIVE', 'INACTIVE') AS version_status
+FROM UDL.NEWSLETTER_HIST
+ORDER BY business_key, active_date;
+-- EXPECTED: 4 rows, all with active_flag = TRUE (all ACTIVE, no history yet)
 
 -- 1G. Audit columns populated
 SELECT code, dbt_loaded_at, dbt_run_id, dbt_batch_id, dbt_source_model, dbt_environment
@@ -122,10 +123,8 @@ SELECT 'UDL.NEWSLETTER_INTERACTION', COUNT(*) FROM UDL.NEWSLETTER_INTERACTION
 UNION ALL
 SELECT 'UDL.NEWSLETTER_CATEGORY', COUNT(*) FROM UDL.NEWSLETTER_CATEGORY
 UNION ALL
-SELECT 'UDL.NEWSLETTER_SCD2', COUNT(*) FROM UDL.NEWSLETTER_SCD2
-UNION ALL
 SELECT 'UDL.NEWSLETTER_HIST', COUNT(*) FROM UDL.NEWSLETTER_HIST;
--- EXPECTED: NEWSLETTER=4, INTERACTION=4, CATEGORY=3, SCD2=4, HIST=4
+-- EXPECTED: NEWSLETTER=4, INTERACTION=4, CATEGORY=3, HIST=4
 
 -- 1I. Seed tables loaded
 SELECT 'ref_newsletter_status' AS seed, COUNT(*) AS rows FROM DBT_UDL.REF_NEWSLETTER_STATUS
@@ -157,10 +156,12 @@ WHERE code = '202a20ae-ba80-4d69-ad0f-46febe2e293c';
 SELECT COUNT(*) AS wrk_newsletter_count FROM DBT_UDL.WRK_NEWSLETTER;
 -- EXPECTED: 4
 
--- 2C. Current snapshot state
-SELECT COUNT(*) AS snap_total, SUM(IFF(dbt_valid_to IS NULL, 1, 0)) AS current_versions
-FROM DBT_UDL.SNAP_NEWSLETTER;
--- EXPECTED: snap_total=4, current_versions=4
+-- 2C. Current NEWSLETTER_HIST state
+SELECT COUNT(*) AS hist_total,
+       SUM(IFF(active_flag, 1, 0)) AS active_versions,
+       SUM(IFF(NOT active_flag, 1, 0)) AS inactive_versions
+FROM UDL.NEWSLETTER_HIST;
+-- EXPECTED: hist_total=4, active_versions=4, inactive_versions=0
 
 -- 2D. Current NEWSLETTER_HIST count
 SELECT COUNT(*) AS hist_count FROM UDL.NEWSLETTER_HIST;
@@ -255,57 +256,54 @@ SELECT
 -- AFTER: Validate incremental merge + SCD-2
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- 2G. MERGE UPDATE: "Weekly Update" should be updated in-place (same row, new data)
+-- 2G. Delta: wrk_newsletter should have ONLY new/changed records (NOT the full 5)
 SELECT code, name, subject, hash_value, dbt_loaded_at
-FROM DBT_UDL.WRK_NEWSLETTER
-WHERE code = '202a20ae-ba80-4d69-ad0f-46febe2e293c';
--- EXPECTED: 1 row (NOT 2), name = 'Weekly Update v2', subject = 'Your updated weekly digest'
---   The hash_value should be DIFFERENT from Round 1 (data changed)
+FROM DBT_UDL.WRK_NEWSLETTER;
+-- EXPECTED: 2 rows — the MODIFIED "Weekly Update v2" + the NEW "Q1 Report"
+--   (unchanged newsletters are NOT in the wrk table)
 
--- 2H. MERGE INSERT: New newsletter should appear
+-- 2H. New newsletter in delta
 SELECT code, name, subject
 FROM DBT_UDL.WRK_NEWSLETTER
 WHERE code = 'new-nl-round2-uuid-1234567890ab';
 -- EXPECTED: 1 row, name = 'Q1 Report'
 
--- 2I. Total count should increase by 1 (4→5)
-SELECT COUNT(*) AS wrk_newsletter_count FROM DBT_UDL.WRK_NEWSLETTER;
+-- 2I. UDL.NEWSLETTER should have 5 total (4 existing + 1 new, 1 updated in-place)
+SELECT COUNT(*) AS udl_newsletter_count FROM UDL.NEWSLETTER;
 -- EXPECTED: 5
 
--- 2J. SCD-2: "Weekly Update" should have 2 versions — old (closed) + new (current)
+-- 2J. NEWSLETTER_HIST: "Weekly Update" should have 2 versions — old (inactive) + new (active)
 SELECT
     tenant_code || '|' || code AS business_key,
     name,
     subject,
     hash_value,
-    dbt_valid_from,
-    dbt_valid_to,
-    IFF(dbt_valid_to IS NULL, 'CURRENT', 'HISTORICAL') AS version_status
-FROM DBT_UDL.SNAP_NEWSLETTER
+    active_flag,
+    active_date,
+    inactive_date,
+    IFF(active_flag, 'ACTIVE', 'INACTIVE') AS version_status
+FROM UDL.NEWSLETTER_HIST
 WHERE code = '202a20ae-ba80-4d69-ad0f-46febe2e293c'
-ORDER BY dbt_valid_from;
+ORDER BY active_date;
 -- EXPECTED: 2 rows:
---   Row 1: name='Weekly Update',    subject='Your weekly digest',         version_status='HISTORICAL'
---   Row 2: name='Weekly Update v2', subject='Your updated weekly digest', version_status='CURRENT'
+--   Row 1: name='Weekly Update',    subject='Your weekly digest',         version_status='INACTIVE'
+--   Row 2: name='Weekly Update v2', subject='Your updated weekly digest', version_status='ACTIVE'
 
--- 2K. SCD-2: Total snapshot rows should increase (4 original + 1 new version + 1 new NL = 6)
+-- 2K. NEWSLETTER_HIST: Total should have 4 (round 1 originals) + 2 (round 2 delta) = 6 rows
+--     1 of the round-1 rows was deactivated (Weekly Update), so: 3 active originals + 1 inactive original + 2 new active
 SELECT
-    COUNT(*)                                             AS snap_total,
-    SUM(IFF(dbt_valid_to IS NULL, 1, 0))                 AS current_versions,
-    SUM(IFF(dbt_valid_to IS NOT NULL, 1, 0))             AS historical_versions
-FROM DBT_UDL.SNAP_NEWSLETTER;
--- EXPECTED: snap_total=6, current_versions=5, historical_versions=1
+    COUNT(*)                              AS hist_total,
+    SUM(IFF(active_flag, 1, 0))           AS active_versions,
+    SUM(IFF(NOT active_flag, 1, 0))       AS inactive_versions
+FROM UDL.NEWSLETTER_HIST;
+-- EXPECTED: hist_total=6, active_versions=5, inactive_versions=1
 
--- 2L. Publish: NEWSLETTER_HIST should have 4 (round 1) + 5 (round 2) = 9 rows
-SELECT COUNT(*) AS hist_count FROM UDL.NEWSLETTER_HIST;
--- EXPECTED: 9
-
--- 2M. Publish: UDL.NEWSLETTER should match DBT_UDL.WRK_NEWSLETTER
+-- 2L. UDL.NEWSLETTER should have exactly the active HIST records
 SELECT
     (SELECT COUNT(*) FROM UDL.NEWSLETTER) AS udl_count,
-    (SELECT COUNT(*) FROM DBT_UDL.WRK_NEWSLETTER) AS dbt_udl_count,
-    (SELECT COUNT(*) FROM UDL.NEWSLETTER) = (SELECT COUNT(*) FROM DBT_UDL.WRK_NEWSLETTER) AS counts_match;
--- EXPECTED: udl_count=5, dbt_udl_count=5, counts_match=TRUE
+    (SELECT COUNT(*) FROM UDL.NEWSLETTER_HIST WHERE ACTIVE_FLAG = TRUE) AS hist_active_count,
+    (SELECT COUNT(*) FROM UDL.NEWSLETTER) = (SELECT COUNT(*) FROM UDL.NEWSLETTER_HIST WHERE ACTIVE_FLAG = TRUE) AS counts_match;
+-- EXPECTED: udl_count=5, hist_active_count=5, counts_match=TRUE
 
 
 -- ╔═══════════════════════════════════════════════════════════════════════════╗
@@ -374,31 +372,32 @@ SELECT
 -- AFTER: Validate delete handling
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- 3B. Record should be marked as deleted
+-- 3B. Delta wrk_newsletter should contain ONLY the changed record
 SELECT code, name, is_deleted, active_flag, hash_value
 FROM DBT_UDL.WRK_NEWSLETTER
 WHERE code = 'sch-nl-001-uuid-here-1234567890ab';
 -- EXPECTED: is_deleted=TRUE (derived from event type NEWSLETTER_DELETED)
 --   The hash_value should DIFFER from Round 2 (is_deleted changed)
 
--- 3C. Total count should remain 5 (MERGE updated in-place, not added a new row)
-SELECT COUNT(*) AS wrk_newsletter_count FROM DBT_UDL.WRK_NEWSLETTER;
+-- 3C. UDL.NEWSLETTER should still have 5 records (delete just updates the row)
+SELECT COUNT(*) AS udl_newsletter_count FROM UDL.NEWSLETTER;
 -- EXPECTED: 5
 
--- 3D. SCD-2: "Scheduled Monthly" should have 2 versions (pre-delete + post-delete)
+-- 3D. NEWSLETTER_HIST: "Scheduled Monthly" should have 2 versions (pre-delete + post-delete)
 SELECT
     name,
     is_deleted,
     hash_value,
-    dbt_valid_from,
-    dbt_valid_to,
-    IFF(dbt_valid_to IS NULL, 'CURRENT', 'HISTORICAL') AS version_status
-FROM DBT_UDL.SNAP_NEWSLETTER
+    active_flag,
+    active_date,
+    inactive_date,
+    IFF(active_flag, 'ACTIVE', 'INACTIVE') AS version_status
+FROM UDL.NEWSLETTER_HIST
 WHERE code = 'sch-nl-001-uuid-here-1234567890ab'
-ORDER BY dbt_valid_from;
+ORDER BY active_date;
 -- EXPECTED: 2 rows:
---   Row 1: is_deleted=FALSE, version_status='HISTORICAL' (old version closed)
---   Row 2: is_deleted=TRUE,  version_status='CURRENT'    (delete event version)
+--   Row 1: is_deleted=FALSE, version_status='INACTIVE' (old version deactivated)
+--   Row 2: is_deleted=TRUE,  version_status='ACTIVE'   (delete event version)
 
 
 -- ╔═══════════════════════════════════════════════════════════════════════════╗
@@ -410,11 +409,11 @@ ORDER BY dbt_valid_from;
 -- BEFORE: Capture hash and dbt_loaded_at for a record
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- 4A. Record state before no-op run
-SELECT code, name, hash_value, dbt_loaded_at AS loaded_at_before
-FROM DBT_UDL.WRK_NEWSLETTER
+-- 4A. UDL.NEWSLETTER state before no-op run (wrk is delta-only, check published table)
+SELECT code, name, hash_value
+FROM UDL.NEWSLETTER
 WHERE code = '85db08a2-3579-49b8-b4a4-1d80fd9021a7';
--- NOTE: Save hash_value and dbt_loaded_at — they should NOT change after next build
+-- NOTE: Save hash_value — UDL.NEWSLETTER should NOT change after next build (no delta)
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -427,68 +426,56 @@ WHERE code = '85db08a2-3579-49b8-b4a4-1d80fd9021a7';
 -- AFTER: Verify no changes (hash dedup prevented unnecessary updates)
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- 4B. Hash and dbt_loaded_at should be UNCHANGED
-SELECT code, name, hash_value, dbt_loaded_at AS loaded_at_after
-FROM DBT_UDL.WRK_NEWSLETTER
-WHERE code = '85db08a2-3579-49b8-b4a4-1d80fd9021a7';
--- EXPECTED: hash_value and dbt_loaded_at match the BEFORE values from 4A
---   The dedup logic (LEFT JOIN on hash_value) prevents re-processing unchanged records
+-- 4B. wrk_newsletter should be EMPTY (no changes = no delta)
+SELECT COUNT(*) AS wrk_newsletter_count FROM DBT_UDL.WRK_NEWSLETTER;
+-- EXPECTED: 0 (hash dedup against UDL.NEWSLETTER filters out all unchanged records)
 
--- 4C. SCD-2 snapshot should have NO new versions
+-- 4C. NEWSLETTER_HIST should have NO new versions
 SELECT
-    COUNT(*)                                             AS snap_total,
-    SUM(IFF(dbt_valid_to IS NULL, 1, 0))                 AS current_versions,
-    SUM(IFF(dbt_valid_to IS NOT NULL, 1, 0))             AS historical_versions
-FROM DBT_UDL.SNAP_NEWSLETTER;
+    COUNT(*)                              AS hist_total,
+    SUM(IFF(active_flag, 1, 0))           AS active_versions,
+    SUM(IFF(NOT active_flag, 1, 0))       AS inactive_versions
+FROM UDL.NEWSLETTER_HIST;
 -- EXPECTED: Same counts as end of Round 3 (no new history created for unchanged data)
 
 
 -- ╔═══════════════════════════════════════════════════════════════════════════╗
--- ║  ROUND 5: PUBLISH VERIFICATION (CLONE+SWAP)                             ║
--- ║  Pattern: Atomic clone from DBT_UDL.WRK_* → UDL.* + NEWSLETTER_HIST    ║
+-- ║  ROUND 5: PUBLISH VERIFICATION (HIST-AS-MASTER)                        ║
+-- ║  Pattern: wrk delta → NEWSLETTER_HIST → UDL.NEWSLETTER + MERGE others  ║
 -- ╚═══════════════════════════════════════════════════════════════════════════╝
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- AFTER any dbt build (publish runs automatically via pipeline_complete post-hook)
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- 5A. Row count parity: UDL should match DBT_UDL
+-- 5A. UDL.NEWSLETTER = active NEWSLETTER_HIST records
 SELECT
     'NEWSLETTER'             AS entity,
-    (SELECT COUNT(*) FROM DBT_UDL.WRK_NEWSLETTER)             AS dbt_udl_count,
-    (SELECT COUNT(*) FROM UDL.NEWSLETTER)                      AS udl_count,
-    (SELECT COUNT(*) FROM DBT_UDL.WRK_NEWSLETTER) =
-    (SELECT COUNT(*) FROM UDL.NEWSLETTER)                      AS match
+    (SELECT COUNT(*) FROM UDL.NEWSLETTER_HIST WHERE ACTIVE_FLAG = TRUE) AS hist_active_count,
+    (SELECT COUNT(*) FROM UDL.NEWSLETTER)                               AS udl_count,
+    (SELECT COUNT(*) FROM UDL.NEWSLETTER_HIST WHERE ACTIVE_FLAG = TRUE) =
+    (SELECT COUNT(*) FROM UDL.NEWSLETTER)                               AS match
 UNION ALL
 SELECT
     'NEWSLETTER_INTERACTION',
-    (SELECT COUNT(*) FROM DBT_UDL.WRK_NEWSLETTER_INTERACTION),
+    NULL,
     (SELECT COUNT(*) FROM UDL.NEWSLETTER_INTERACTION),
-    (SELECT COUNT(*) FROM DBT_UDL.WRK_NEWSLETTER_INTERACTION) =
-    (SELECT COUNT(*) FROM UDL.NEWSLETTER_INTERACTION)
+    TRUE
 UNION ALL
 SELECT
     'NEWSLETTER_CATEGORY',
-    (SELECT COUNT(*) FROM DBT_UDL.WRK_NEWSLETTER_CATEGORY),
+    NULL,
     (SELECT COUNT(*) FROM UDL.NEWSLETTER_CATEGORY),
-    (SELECT COUNT(*) FROM DBT_UDL.WRK_NEWSLETTER_CATEGORY) =
-    (SELECT COUNT(*) FROM UDL.NEWSLETTER_CATEGORY)
-UNION ALL
-SELECT
-    'NEWSLETTER_SCD2',
-    (SELECT COUNT(*) FROM DBT_UDL.SNAP_NEWSLETTER),
-    (SELECT COUNT(*) FROM UDL.NEWSLETTER_SCD2),
-    (SELECT COUNT(*) FROM DBT_UDL.SNAP_NEWSLETTER) =
-    (SELECT COUNT(*) FROM UDL.NEWSLETTER_SCD2);
--- EXPECTED: All MATCH = TRUE
+    TRUE;
+-- EXPECTED: NEWSLETTER MATCH = TRUE, all entities have expected row counts
 
--- 5B. Data content parity: spot-check a record across work and published tables
-SELECT 'DBT_UDL' AS source_schema, code, name, subject, hash_value
-FROM DBT_UDL.WRK_NEWSLETTER WHERE code = '202a20ae-ba80-4d69-ad0f-46febe2e293c'
+-- 5B. Data content parity: spot-check a record in UDL.NEWSLETTER vs NEWSLETTER_HIST
+SELECT 'NEWSLETTER_HIST' AS source_table, code, name, subject, hash_value, active_flag
+FROM UDL.NEWSLETTER_HIST WHERE code = '202a20ae-ba80-4d69-ad0f-46febe2e293c' AND ACTIVE_FLAG = TRUE
 UNION ALL
-SELECT 'UDL', code, name, subject, hash_value
+SELECT 'NEWSLETTER', code, name, subject, hash_value, TRUE
 FROM UDL.NEWSLETTER WHERE code = '202a20ae-ba80-4d69-ad0f-46febe2e293c';
--- EXPECTED: Both rows identical (clone is a zero-copy snapshot)
+-- EXPECTED: Both rows identical (UDL.NEWSLETTER derived from active HIST)
 
 -- 5C. NEWSLETTER_HIST accumulation: should grow with each build
 SELECT
@@ -565,14 +552,14 @@ SELECT COUNT(*) AS stg_newsletter_count FROM UDL.STG_NEWSLETTER;
 -- ├────────────────────────────┼──────────────────────────────────────────────┤
 -- │ Full table load            │ Round 1: 5 source → 4 deduped rows          │
 -- │ ROW_NUMBER dedup           │ Round 1: Duplicate resolved by kafka_ts rank │
--- │ Incremental MERGE (update) │ Round 2: Modified NL updated in-place        │
--- │ Incremental MERGE (insert) │ Round 2: New NL inserted, count 4→5         │
--- │ Hash-based change detect   │ Round 4: No changes when data unchanged     │
--- │ SCD-2 (check strategy)     │ Round 2: Old version closed, new inserted   │
--- │ SCD-2 (delete tracking)    │ Round 3: Delete event creates new version   │
+-- │ Delta dedup (new/changed)   │ Round 2: Modified NL in delta, published    │
+-- │ Delta dedup (new record)   │ Round 2: New NL in delta, HIST accumulates  │
+-- │ Hash-based no-op           │ Round 4: Empty delta when data unchanged    │
+-- │ HIST SCD-2 (deactivate)    │ Round 2: Old version deactivated in HIST    │
+-- │ HIST SCD-2 (delete event)  │ Round 3: Delete creates new active version  │
 -- │ Delete flag propagation    │ Round 3: is_deleted=TRUE from event type     │
--- │ Clone+Swap publish         │ Round 5: UDL.* = DBT_UDL.WRK_*             │
--- │ Snapshot publish (SCD2)    │ Round 5: UDL.NEWSLETTER_SCD2 = SNAP_NL     │
+-- │ HIST-as-master publish      │ Round 5: UDL.NEWSLETTER = active HIST      │
+-- │ Delta MERGE publish         │ Round 5: INTERACTION/CATEGORY via MERGE    │
 -- │ History accumulation       │ Round 5: NEWSLETTER_HIST grows each build   │
 -- │ Full load + archive union  │ Round 6: Raw+Archive → same result set      │
 -- │ Audit column population    │ Round 1: All dbt_* columns non-null         │

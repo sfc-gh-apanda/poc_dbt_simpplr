@@ -2,47 +2,28 @@
 
 {{
     config(
-        materialized='incremental',
-        unique_key=['tenant_code', 'code'],
-        incremental_strategy='merge',
-        on_schema_change='fail',
-        merge_exclude_columns=['id'],
+        materialized='table',
         schema='DBT_UDL',
         cluster_by=['SUBSTRING(tenant_code, -5)'],
-        tags=['newsletter', 'wrk', 'merge'],
+        tags=['newsletter', 'wrk', 'delta'],
         query_tag='dbt_wrk_newsletter',
-        post_hook=[
-            "{{ log_model_with_row_count() }}",
-            "{% if is_incremental() %}UPDATE {{ this }} t SET t.actual_delivery_system_type = ias.actual_delivery_system_type, t.updated_by = CURRENT_USER(), t.updated_datetime = CURRENT_TIMESTAMP() FROM {{ ref('stg_newsletter_interaction_summary') }} ias WHERE t.tenant_code = ias.int_tenant_code AND t.code = ias.int_newsletter_code AND (t.actual_delivery_system_type IS NULL OR t.actual_delivery_system_type != ias.actual_delivery_system_type){% endif %}"
-        ]
+        post_hook=["{{ log_model_with_row_count() }}"]
     )
 }}
 
 WITH source_data AS (
     SELECT * FROM {{ ref('int_newsletter_joined') }}
-    {% if is_incremental() %}
-    WHERE created_datetime >= (
-        SELECT COALESCE(MAX(dbt_loaded_at), '2000-01-01'::TIMESTAMP_NTZ)
-        FROM {{ this }}
-    )
-    {% endif %}
 ),
 
-{% if is_incremental() %}
 deduped AS (
     SELECT sd.*
     FROM source_data sd
-    LEFT JOIN {{ this }} t
+    LEFT JOIN {{ source('udl_published', 'NEWSLETTER') }} t
         ON sd.tenant_code = t.tenant_code
        AND sd.code = t.code
        AND sd.hash_value = t.hash_value
     WHERE t.hash_value IS NULL
 ),
-{% else %}
-deduped AS (
-    SELECT * FROM source_data
-),
-{% endif %}
 
 ref_status AS (
     SELECT code AS status_code, identifier_shared_service
@@ -71,12 +52,8 @@ enriched AS (
 
 final AS (
     SELECT
-        {% if is_incremental() %}
-            ROW_NUMBER() OVER (ORDER BY kafka_timestamp)
-                + (SELECT COALESCE(MAX(id), 0) FROM {{ this }}) AS id,
-        {% else %}
-            ROW_NUMBER() OVER (ORDER BY kafka_timestamp) AS id,
-        {% endif %}
+        ROW_NUMBER() OVER (ORDER BY kafka_timestamp)
+            + COALESCE((SELECT MAX(id) FROM {{ source('udl_published', 'NEWSLETTER_HIST') }}), 0) AS id,
 
         {{ data_source_code('tenant_code') }}                        AS data_source_code,
         COALESCE(tenant_code, 'N/A')                                 AS tenant_code,

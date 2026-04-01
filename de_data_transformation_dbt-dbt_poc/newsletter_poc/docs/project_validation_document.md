@@ -17,11 +17,11 @@ This project replaces the existing Scala/Snowpark newsletter ETL pipeline with a
 |--------|-------|
 | Source entities | 3 (Newsletter, Interaction, Category) |
 | dbt models | 10 (5 staging + 1 intermediate + 3 marts + 1 sentinel) |
-| Snapshots (SCD-2) | 1 (snap_newsletter) |
+| SCD-2 pattern | HIST-as-master (NEWSLETTER_HIST with active_flag tracking) |
 | Reference seeds | 6 (CSV-managed lookup tables) |
 | Custom macros | 14 |
 | Automated tests | 51 (schema, uniqueness, accepted values, contracts) |
-| Stored procedures | 8 (merge helper, publish, archive, retry, artifact logging) |
+| Stored procedures | 8 (MERGE helper, HIST-as-master publish, archive, retry, artifact logging) |
 | Monitoring views | 28 |
 | Dashboard queries | 30+ across 9 categories |
 
@@ -75,36 +75,28 @@ This project replaces the existing Scala/Snowpark newsletter ETL pipeline with a
   │  ref_newsletter_interaction_type · ref_newsletter_delivery_system_type      │
   │  ref_newsletter_click_type · ref_newsletter_block_type                      │
   ├─────────────────────────────────────────────────────────────────────────────┤
-  │  MARTS (DBT_UDL schema)                      materialized: incremental     │
-  │                                               strategy: merge              │
+  │  MARTS (DBT_UDL schema)                      materialized: table           │
+  │                                               (delta-only per run)         │
   │  wrk_newsletter              ← int_newsletter_joined + 2 seeds             │
   │  wrk_newsletter_interaction  ← stg_interaction + 5 seeds                   │
   │  wrk_newsletter_category     ← stg_category (self-contained)               │
   │  pipeline_complete           ← sentinel view (triggers publish + archive)   │
   │                                                                             │
-  │  Hash-based dedup · Reference enrichment · Schema contracts                 │
-  │  Audit columns · Incremental merge on (tenant_code, code)                   │
+  │  Hash-dedup against UDL published tables · Reference enrichment             │
+  │  Schema contracts · Audit columns · Delta-only (current run's changes)      │
   └──────────┬──────────────────────────────────────────────────────────────────┘
              │
              ▼
   ┌─────────────────────────────────────────────────────────────────────────────┐
-  │  SNAPSHOTS (DBT_UDL schema)                    SCD Type 2                   │
-  │  snap_newsletter  ← wrk_newsletter                                         │
-  │  Check strategy on hash_value + actual_delivery_system_type                 │
-  │  Maintains dbt_valid_from / dbt_valid_to for full history                   │
-  └──────────┬──────────────────────────────────────────────────────────────────┘
-             │
-             ▼
-  ┌─────────────────────────────────────────────────────────────────────────────┐
-  │  PUBLISH (UDL schema)           Hybrid Merge+Clone via stored procedure     │
-  │  UDL.NEWSLETTER              ← MERGE from DBT_UDL.WRK_NEWSLETTER           │
-  │  UDL.NEWSLETTER_INTERACTION  ← MERGE from DBT_UDL.WRK_NEWSLETTER_INTERACTION│
-  │  UDL.NEWSLETTER_CATEGORY     ← MERGE from DBT_UDL.WRK_NEWSLETTER_CATEGORY  │
-  │  UDL.NEWSLETTER_SCD2         ← CLONE DBT_UDL.SNAP_NEWSLETTER               │
-  │  UDL.NEWSLETTER_HIST         ← INSERT from UDL.NEWSLETTER (append)         │
+  │  PUBLISH (UDL schema)          HIST-as-master via stored procedure          │
+  │  UDL.NEWSLETTER_HIST         ← UPDATE deactivate + INSERT new active       │
+  │    (master SCD-2 accumulator, active_flag tracked)                          │
+  │  UDL.NEWSLETTER              ← TRUNCATE + INSERT WHERE active_flag=TRUE    │
+  │    (derived current state — Time Travel preserved)                          │
+  │  UDL.NEWSLETTER_INTERACTION  ← MERGE delta from WRK (Time Travel preserved)│
+  │  UDL.NEWSLETTER_CATEGORY     ← MERGE delta from WRK (Time Travel preserved)│
   │                                                                             │
-  │  MERGE: only changed rows written — preserves Snowflake Time Travel         │
-  │  CLONE: instant for SCD2 (table IS the history — Time Travel redundant)     │
+  │  All within a single transaction for atomicity                              │
   ├─────────────────────────────────────────────────────────────────────────────┤
   │  ARCHIVE (SHARED_SERVICES_STAGING)          Post-publish raw data archival  │
   │  VW_ENL_NEWSLETTER → ENL_NEWSLETTER_ARCHIVE (INSERT + DELETE)              │
@@ -118,8 +110,8 @@ This project replaces the existing Scala/Snowpark newsletter ETL pipeline with a
 | Schema | Purpose | Objects |
 |--------|---------|---------|
 | `SHARED_SERVICES_STAGING` | Raw Kafka data (input) | 3 source tables + 3 archive tables |
-| `UDL` | Staging tables, seeds, user-facing published tables | 5 staging tables, 6 seed tables, 3 MERGE-published fact tables + NEWSLETTER_SCD2 (cloned) + NEWSLETTER_HIST |
-| `DBT_UDL` | dbt work tables and snapshots | 3 wrk_* tables, 1 snapshot, 1 sentinel view |
+| `UDL` | Staging tables, seeds, user-facing published tables | 5 staging tables, 6 seed tables, NEWSLETTER (derived from HIST), NEWSLETTER_INTERACTION, NEWSLETTER_CATEGORY, NEWSLETTER_HIST |
+| `DBT_UDL` | dbt delta work tables | 3 wrk_* tables (delta-only), 1 sentinel view |
 | `UDL_BATCH_PROCESS` | Stored procedures | 8 procedures (merge helper, publish, archive, retry, artifact logging) |
 | `DBT_EXECUTION_RUN_STATS` | Audit and observability | Run logs, model logs, test results, build results, monitoring views |
 
@@ -136,49 +128,48 @@ This project replaces the existing Scala/Snowpark newsletter ETL pipeline with a
 | `SHARED_SERVICES_STAGING.VW_ENL_NEWSLETTER_CATEGORY` | `{{ source('shared_services_staging', 'VW_ENL_NEWSLETTER_CATEGORY') }}` | Same table, read via `source()` |
 | `UDL_BATCH_PROCESS.SHARED_STG_*` | `UDL.STG_NEWSLETTER`, `STG_NEWSLETTER_INTERACTION`, etc. | Staging layer (parsing + hashing) |
 | `UDL_BATCH_PROCESS.WRK_*` | `DBT_UDL.WRK_NEWSLETTER`, `WRK_NEWSLETTER_INTERACTION`, `WRK_NEWSLETTER_CATEGORY` | Work/mart tables (dedup + enrich) |
-| `UDL.NEWSLETTER` | `UDL.NEWSLETTER` (via MERGE from `DBT_UDL.WRK_NEWSLETTER`) | User-facing published table (Time Travel preserved) |
-| `UDL.NEWSLETTER_INTERACTION` | `UDL.NEWSLETTER_INTERACTION` (via MERGE) | User-facing published table (Time Travel preserved) |
-| `UDL.NEWSLETTER_CATEGORY` | `UDL.NEWSLETTER_CATEGORY` (via MERGE) | User-facing published table (Time Travel preserved) |
-| `UDL.NEWSLETTER_HIST` | `UDL.NEWSLETTER_HIST` (appended during publish) | Historical snapshots of newsletter state |
-| N/A (new) | `UDL.NEWSLETTER_SCD2` (via clone of `SNAP_NEWSLETTER`) | Full SCD-2 history with dbt_valid_from/to |
+| `UDL.NEWSLETTER` | `UDL.NEWSLETTER` (derived from NEWSLETTER_HIST WHERE active_flag=TRUE) | User-facing current state (Time Travel preserved via TRUNCATE+INSERT) |
+| `UDL.NEWSLETTER_INTERACTION` | `UDL.NEWSLETTER_INTERACTION` (via MERGE from wrk delta) | User-facing published table (Time Travel preserved) |
+| `UDL.NEWSLETTER_CATEGORY` | `UDL.NEWSLETTER_CATEGORY` (via MERGE from wrk delta) | User-facing published table (Time Travel preserved) |
+| `UDL.NEWSLETTER_HIST` | `UDL.NEWSLETTER_HIST` (master SCD-2 accumulator) | All versions with active_flag tracking — single source of truth |
 
 ### 3.2 Process Mapping
 
 | Scala Process | dbt Equivalent | How |
 |--------------|----------------|-----|
 | Batch run tracking (`BATCH_RUN`, `PROCESS_RUN`) | `DBT_RUN_LOG`, `DBT_MODEL_LOG` | `on-run-start`/`on-run-end` hooks, model post-hooks |
-| Hash-based deduplication | `LEFT JOIN ... ON hash_value` in incremental mode | Same MD5 hash logic over business columns |
+| Hash-based deduplication | `LEFT JOIN UDL published table ON hash_value` | Same MD5 hash logic over business columns |
 | ROW_NUMBER latest version | `ROW_NUMBER() OVER (PARTITION BY tenant_code, code ORDER BY kafka_timestamp DESC)` | `int_newsletter_joined` ephemeral model |
 | Reference table lookups | `LEFT JOIN {{ ref('ref_newsletter_status') }}` | 6 dbt seed tables |
-| Publish to UDL (DELETE+INSERT) | Hybrid Merge+Clone | MERGE for fact tables (preserves Time Travel, touches only changed rows), CLONE for SCD2 |
+| Publish to UDL (DELETE+INSERT) | HIST-as-master publish | NEWSLETTER: deactivate HIST → insert active → TRUNCATE+INSERT UDL.NEWSLETTER. INTERACTION/CATEGORY: delta MERGE |
 | Archive raw data | `PRC_DBT_ARCHIVE_RAW_DATA` procedure | INSERT into archive + DELETE from raw |
-| SCD-2 history | `snap_newsletter` (dbt snapshot, check strategy) | Tracks `hash_value` + `actual_delivery_system_type` |
+| SCD-2 history (NEWSLETTER_HIST) | `UDL.NEWSLETTER_HIST` (master accumulator) | active_flag-based SCD-2 — same pattern as Scala pipeline |
 
 ---
 
 ## 4. Data Loading Patterns
 
-### 4.1 Incremental Merge
+### 4.1 Delta-Only Work Tables
 
-**What:** Only new/changed records are processed on each run. The wrk_* tables use `incremental` materialization with `merge` strategy.
+**What:** Only new/changed records are materialized each run. The wrk_* tables use `table` materialization (rebuilt each run with delta only).
 
 **How it works:**
 1. Staging rebuilds the full parsed dataset from source tables
-2. Incremental filter: `WHERE created_datetime >= MAX(dbt_loaded_at)` from the target table
-3. Hash-based dedup: new records are compared against existing `hash_value` — unchanged records are skipped
-4. dbt MERGE: matched records (same `tenant_code` + `code`) are updated; unmatched are inserted
+2. Hash-based dedup: new records are compared against published UDL table `hash_value` — unchanged records are skipped
+3. Only the delta (new/changed records) is materialized in the wrk_* table
+4. The wrk table is truncated and rebuilt each run (just like Scala pipeline)
 
-**Unique keys:** `(tenant_code, code)` for all three entities.
+**Dedup keys:** `(tenant_code, code, hash_value)` for all three entities.
 
-### 4.2 SCD Type 2 (Slowly Changing Dimension)
+### 4.2 HIST-as-Master SCD-2 (Newsletter)
 
-**What:** Full version history tracking for newsletters using dbt snapshots.
+**What:** Full version history tracking for newsletters using `NEWSLETTER_HIST` as the master accumulator with `active_flag` tracking.
 
 **How it works:**
-- `snap_newsletter` uses the **check strategy** on `hash_value` and `actual_delivery_system_type`
-- When either column changes, the current record is closed (`dbt_valid_to` = current timestamp) and a new version is inserted
-- `invalidate_hard_deletes = True` — if a record disappears from the source, the snapshot marks it as deleted
-- Published as `UDL.NEWSLETTER_SCD2` for downstream consumption
+- Superseded records in `NEWSLETTER_HIST` are deactivated (`active_flag = FALSE`, `inactive_date` set)
+- New active records from `wrk_newsletter` are inserted with `active_flag = TRUE`
+- `UDL.NEWSLETTER` is derived: `TRUNCATE TABLE; INSERT INTO ... SELECT * FROM NEWSLETTER_HIST WHERE ACTIVE_FLAG = TRUE`
+- This pattern directly mirrors the Scala pipeline's approach to `NEWSLETTER_HIST`
 
 ### 4.3 Hash-Based Change Detection
 
@@ -188,26 +179,28 @@ This project replaces the existing Scala/Snowpark newsletter ETL pipeline with a
 
 **Columns hashed (newsletter):** name, subject, sender_address, channels, recipients, status, category, template, theme, creator_id, modifier_id, timestamps, is_deleted, is_archived, reply_to_address, and more.
 
-### 4.4 Atomic Publish (Hybrid Merge+Clone)
+### 4.4 Atomic Publish (HIST-as-Master)
 
-**What:** All three user-facing UDL tables + SCD-2 + NEWSLETTER_HIST are updated atomically in a single transaction.
+**What:** All user-facing UDL tables + NEWSLETTER_HIST are updated atomically in a single transaction.
 
 **How it works:**
-1. `pipeline_complete` sentinel model depends on all 3 wrk_* models + snap_newsletter
+1. `pipeline_complete` sentinel model depends on all 3 wrk_* models
 2. Its post-hook calls `PRC_DBT_PUBLISH_TO_TARGET` stored procedure
-3. **MERGE** for fact tables — dynamic MERGE built from `INFORMATION_SCHEMA` column metadata:
-   - `WHEN MATCHED AND src.HASH_VALUE != tgt.HASH_VALUE THEN UPDATE` — only changed rows are written
+3. **NEWSLETTER (HIST-as-master):**
+   - `UPDATE NEWSLETTER_HIST SET active_flag=FALSE` for superseded records (matching wrk delta by tenant_code+code)
+   - `INSERT INTO NEWSLETTER_HIST` new active records from wrk_newsletter
+   - `TRUNCATE TABLE UDL.NEWSLETTER; INSERT INTO ... SELECT ... WHERE ACTIVE_FLAG=TRUE`
+4. **INTERACTION / CATEGORY (delta MERGE):**
+   - Dynamic MERGE built from `INFORMATION_SCHEMA` column metadata
+   - `WHEN MATCHED THEN UPDATE` — changed rows are updated
    - `WHEN NOT MATCHED THEN INSERT` — new rows are added
-   - `WHEN NOT MATCHED BY SOURCE THEN DELETE` — removed rows are purged
-4. **CLONE** for `NEWSLETTER_SCD2` — instant metadata copy (SCD2 is inherently historical)
-5. **INSERT** to `NEWSLETTER_HIST` — appends current state with `published_by_run_id` and `published_at`
-6. All within `BEGIN TRANSACTION ... COMMIT`
+5. All within `BEGIN TRANSACTION ... COMMIT`
 
-**Why hybrid Merge+Clone:**
-- **MERGE preserves Snowflake Time Travel** on UDL fact tables — consumers can use `AT(TIMESTAMP => ...)` for point-in-time queries, disaster recovery, and audit
-- **MERGE is performant at scale** — at 1B+ rows, only changed rows are written (hash comparison), avoiding full-table rewrites
-- **CLONE for SCD2 is optimal** — the table itself tracks complete history via `dbt_valid_from`/`dbt_valid_to`, making Time Travel redundant on this specific table
-- **Dynamic column resolution** via `PRC_MERGE_PUBLISH` helper — adapts automatically to schema changes without hardcoded column lists
+**Why HIST-as-master:**
+- **Directly mirrors the Scala pipeline** — NEWSLETTER_HIST is the single source of truth with active_flag tracking
+- **Preserves Snowflake Time Travel** on UDL.NEWSLETTER — TRUNCATE+INSERT is DML, not DDL
+- **Delta MERGE is performant at scale** — at 1B+ rows, only the delta (new/changed) is written
+- **Dynamic column resolution** via `PRC_MERGE_PUBLISH` helper — adapts automatically to schema changes
 
 ### 4.5 Raw Data Archival
 
@@ -229,7 +222,7 @@ This project replaces the existing Scala/Snowpark newsletter ETL pipeline with a
 **How it works:**
 - `stg_newsletter` derives `is_deleted` from `TYPE = 'NEWSLETTER_DELETED'`
 - The hash includes `is_deleted`, so the wrk_* table is updated via MERGE
-- `snap_newsletter` captures the delete as a new SCD-2 version
+- The publish procedure captures the delete as a new version in `NEWSLETTER_HIST` (prior active row deactivated)
 
 ---
 
@@ -258,9 +251,6 @@ newsletter_poc/
 │       ├── wrk_newsletter_interaction.sql
 │       ├── wrk_newsletter_category.sql
 │       └── pipeline_complete.sql
-│
-├── snapshots/
-│   └── snap_newsletter.sql      SCD-2 check strategy
 │
 ├── seeds/                       6 reference CSV lookup tables
 │
@@ -310,20 +300,14 @@ newsletter_poc/
 |-------|---------|
 | `int_newsletter_joined` | Joins `stg_newsletter` + `stg_newsletter_recipient` + `stg_newsletter_interaction_summary`. Applies `ROW_NUMBER()` partitioned by `(tenant_code, code)` ordered by `kafka_timestamp DESC` to keep only the latest version of each newsletter. |
 
-### 6.3 Mart Models (3 work tables + 1 sentinel, materialized as `incremental`)
+### 6.3 Mart Models (3 delta work tables + 1 sentinel, materialized as `table`)
 
-| Model | Unique Key | Enrichment | Published As |
-|-------|-----------|------------|--------------|
-| `wrk_newsletter` | `(tenant_code, code)` | 2 seed lookups (status, recipient type). Tenant-aware ID prefixing. Post-hook updates `actual_delivery_system_type` from interactions. | `UDL.NEWSLETTER` |
-| `wrk_newsletter_interaction` | `(tenant_code, code)` | 5 seed lookups (interaction type, delivery system, recipient type, click type, block type). Device type classification from user agent. | `UDL.NEWSLETTER_INTERACTION` |
-| `wrk_newsletter_category` | `(tenant_code, code)` | Data source derivation. Null-safe defaults. | `UDL.NEWSLETTER_CATEGORY` |
-| `pipeline_complete` | N/A (sentinel view) | Depends on all 3 wrk_* + snap_newsletter. Post-hooks trigger publish and archive. | N/A |
-
-### 6.4 Snapshot (1 snapshot, SCD-2 check strategy)
-
-| Snapshot | Source | Strategy | Check Columns | Published As |
-|----------|--------|----------|---------------|--------------|
-| `snap_newsletter` | `wrk_newsletter` | `check` | `hash_value`, `actual_delivery_system_type` | `UDL.NEWSLETTER_SCD2` |
+| Model | Dedup Against | Enrichment | Published As |
+|-------|--------------|------------|--------------|
+| `wrk_newsletter` | `UDL.NEWSLETTER` | 2 seed lookups (status, recipient type). Tenant-aware ID prefixing. | `NEWSLETTER_HIST` → `UDL.NEWSLETTER` |
+| `wrk_newsletter_interaction` | `UDL.NEWSLETTER_INTERACTION` | 5 seed lookups. Device type classification from user agent. | `UDL.NEWSLETTER_INTERACTION` (MERGE) |
+| `wrk_newsletter_category` | `UDL.NEWSLETTER_CATEGORY` | Data source derivation. Null-safe defaults. | `UDL.NEWSLETTER_CATEGORY` (MERGE) |
+| `pipeline_complete` | N/A (sentinel view) | Depends on all 3 wrk_*. Post-hooks trigger publish and archive. | N/A |
 
 ---
 
@@ -431,7 +415,7 @@ Uses `SYSTEM$LOCATE_DBT_ARTIFACTS()` to capture `manifest.json` and `run_results
 | `is_full_load` | `false` | When `true`, staging models UNION raw + archive tables for complete rebuild |
 | `entity_specific_full_load` | `'none'` | Set to `'newsletter'`, `'interaction'`, or `'category'` for per-entity full load |
 | `data_process_end_time` | `'9999-12-31 23:59:59'` | Processing window boundary — filters source data and archival scope |
-| `enable_publish` | `true` | Toggle atomic clone+swap publish to UDL |
+| `enable_publish` | `true` | Toggle HIST-as-master publish to UDL |
 | `enable_archive` | `true` | Toggle raw data archival after publish |
 | `enable_audit_logging` | `true` | Toggle run/model logging to audit tables |
 | `enable_row_count_tracking` | `true` | Toggle row count capture in model post-hooks |
@@ -458,9 +442,9 @@ EXECUTE DBT PROJECT ... ARGS = 'build --target dev --vars ''{enable_publish: fal
 
 | Step | Script | Creates |
 |------|--------|---------|
-| 1 | `account_bootstrap.sql` | Database, 5 schemas, 6 source/archive tables, 3 UDL fact tables, NEWSLETTER_HIST, sample data, access integration |
+| 1 | `account_bootstrap.sql` | Database, 5 schemas, 6 source/archive tables, 3 UDL tables, NEWSLETTER_HIST (master SCD-2), sample data, access integration |
 | 2 | `audit_setup.sql` | `DBT_RUN_LOG`, `DBT_MODEL_LOG`, 4 summary views |
-| 3 | `publish_archive_setup.sql` | Merge helper + publish + archive procedures, NEWSLETTER_HIST audit columns |
+| 3 | `publish_archive_setup.sql` | MERGE helper + HIST-as-master publish + archive procedures, NEWSLETTER_HIST audit columns |
 | 4 | `retry_setup.sql` | Model manifest, retry views, retry procedures |
 | 5 | `test_logging_setup.sql` | Artifact stage, test/build logging tables, artifact procedures, monitoring views |
 | 6 | `dbt deps` | Install dbt_utils + dbt_expectations packages |
@@ -504,8 +488,6 @@ dbt seed (6 reference tables)
     ├── wrk_newsletter_interaction ◄─────┤
     └── wrk_newsletter_category ◄────────┘
                 │
-    snap_newsletter ◄────────────────────┘
-                │
     pipeline_complete (sentinel)
         ├── post-hook: publish_to_target()
         └── post-hook: archive_raw_data()
@@ -522,10 +504,10 @@ A comprehensive 6-round validation script (`setup/dataload_pattern_tests.sql`) t
 | Round | Pattern Tested | Validates |
 |-------|---------------|-----------|
 | 1 | Initial Full Load | 5 source rows → 4 deduped (ROW_NUMBER ranking), audit columns populated |
-| 2 | Incremental Merge + SCD-2 | Modified record updated in-place, new record inserted, snapshot creates historical version |
-| 3 | Delete Handling | NEWSLETTER_DELETED → is_deleted=TRUE, SCD-2 captures pre/post-delete versions |
+| 2 | Delta + HIST-as-master | Modified record creates new active version in HIST, old version deactivated |
+| 3 | Delete Handling | NEWSLETTER_DELETED → is_deleted=TRUE, HIST captures version with is_deleted flag |
 | 4 | Hash-Based Dedup (No-Op) | Re-run with no new data → no updates (hash match prevents re-processing) |
-| 5 | Publish Verification | UDL.* matches DBT_UDL.WRK_*, NEWSLETTER_HIST accumulates each build |
+| 5 | Publish Verification | NEWSLETTER_HIST accumulates versions, UDL.NEWSLETTER = active HIST, INTERACTION/CATEGORY via MERGE |
 | 6 | Full Load + Archive | Records split across raw/archive → UNION ALL produces same complete result |
 
 ### 11.2 Data Reconciliation Queries
@@ -547,14 +529,14 @@ Dashboard Section H provides 7 reconciliation queries:
 |---------|---------------|--------------|
 | Language | Scala/Snowpark | SQL + Jinja |
 | Execution | Airflow orchestrated | Snowflake Native dbt |
-| Incremental processing | Custom merge logic | dbt `incremental` materialization |
-| Deduplication | Custom hash comparison | Same MD5 hash, dbt-native dedup |
-| SCD-2 history | Manual INSERT/UPDATE | dbt snapshot (check strategy) |
+| Work table processing | Custom truncate+reload | dbt `table` materialization (delta-only) |
+| Deduplication | Custom hash comparison | Same MD5 hash, dedup against published UDL |
+| SCD-2 history | NEWSLETTER_HIST with active_flag | Same pattern: NEWSLETTER_HIST with active_flag |
 | Schema validation | Manual | `contract: enforced: true` |
 | Schema drift protection | None | `on_schema_change: fail` |
 | Automated testing | None | 51 tests (not_null, unique, accepted_values, composite uniqueness) |
-| Publish to UDL | DELETE + INSERT | Hybrid Merge+Clone (MERGE fact tables, CLONE SCD2) |
-| Time Travel on UDL | Lost on each publish cycle | Preserved on fact tables (MERGE is DML, not DDL) |
+| Publish to UDL | DELETE + INSERT (swap) | HIST-as-master (deactivate+insert HIST, TRUNCATE+INSERT newsletter, MERGE others) |
+| Time Travel on UDL | Lost on each publish cycle | Preserved on all tables (TRUNCATE+INSERT and MERGE are DML, not DDL) |
 | Audit trail | BATCH_RUN / PROCESS_RUN | DBT_RUN_LOG / DBT_MODEL_LOG |
 | Run retry | Manual re-run | Smart retry (PRC_DBT_SMART_RETRY) |
 | Monitoring | Manual queries | 28 views + 30+ dashboard queries |
@@ -581,23 +563,21 @@ For customer sign-off, validate the following:
 - [ ] Delete events correctly set is_deleted = TRUE
 - [ ] Device type classification matches expected categories
 
-### Incremental Behavior
-- [ ] Modified records update in-place (MERGE update, not duplicate)
-- [ ] New records insert correctly (MERGE insert)
-- [ ] Unchanged records are skipped (hash-based dedup)
-- [ ] Watermark (`created_datetime >= MAX(dbt_loaded_at)`) captures all relevant records
+### Delta Behavior
+- [ ] Work tables contain only current run's new/changed records (not accumulated)
+- [ ] Unchanged records are skipped (hash-based dedup against UDL published tables)
+- [ ] Re-run with no changes produces empty wrk tables (no-op delta)
 
-### SCD-2 History
-- [ ] Changed records create new version (dbt_valid_to set on old, new row inserted)
-- [ ] Unchanged records maintain current version (no spurious history)
-- [ ] Hard deletes are tracked (invalidate_hard_deletes = True)
+### HIST-as-Master SCD-2
+- [ ] Superseded records in NEWSLETTER_HIST are deactivated (active_flag=FALSE, inactive_date set)
+- [ ] New active records are inserted into NEWSLETTER_HIST (active_flag=TRUE)
+- [ ] UDL.NEWSLETTER matches NEWSLETTER_HIST WHERE ACTIVE_FLAG=TRUE
 
 ### Publish & Archive
-- [ ] UDL tables match DBT_UDL work tables after publish (row counts + data content)
-- [ ] MERGE correctly inserts new rows, updates changed rows, deletes removed rows
-- [ ] Time Travel works on UDL fact tables after publish (`SELECT * FROM UDL.NEWSLETTER AT(OFFSET => -60)`)
-- [ ] NEWSLETTER_HIST accumulates rows with each build
-- [ ] NEWSLETTER_SCD2 reflects complete snapshot history
+- [ ] UDL.NEWSLETTER derived correctly from NEWSLETTER_HIST active records
+- [ ] INTERACTION and CATEGORY updated via MERGE (new rows inserted, changed rows updated)
+- [ ] Time Travel works on UDL tables after publish (`SELECT * FROM UDL.NEWSLETTER AT(OFFSET => -60)`)
+- [ ] NEWSLETTER_HIST accumulates versions with each build
 - [ ] Archive tables receive records after publish
 - [ ] Source tables are purged after archival
 - [ ] All operations are atomic (transaction-scoped)

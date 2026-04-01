@@ -646,18 +646,19 @@ SELECT
 FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER;
 
 -- ─────────────────────────────────────────────────────────────────
--- G3. Snapshot (SCD-2) Tracking  [CHART: Table]
--- Shows versions per entity in the snapshot table
+-- G3. NEWSLETTER_HIST (SCD-2) Tracking  [CHART: Table]
+-- Shows versions per entity in the HIST-as-master table
 -- ─────────────────────────────────────────────────────────────────
 SELECT
     tenant_code                                              AS "Tenant",
     code                                                     AS "Newsletter Code",
     name                                                     AS "Name",
     COUNT(*)                                                 AS "Total Versions",
-    SUM(IFF(dbt_valid_to IS NULL, 1, 0))                     AS "Active Versions",
-    MIN(dbt_valid_from)                                      AS "First Version",
-    MAX(dbt_valid_from)                                      AS "Latest Version"
-FROM COMMON_TENANT_DEV.DBT_UDL.SNAP_NEWSLETTER
+    SUM(IFF(active_flag, 1, 0))                              AS "Active Versions",
+    SUM(IFF(NOT active_flag, 1, 0))                          AS "Inactive Versions",
+    MIN(active_date)                                         AS "First Version",
+    MAX(active_date)                                         AS "Latest Version"
+FROM COMMON_TENANT_DEV.UDL.NEWSLETTER_HIST
 GROUP BY 1, 2, 3
 ORDER BY "Total Versions" DESC
 LIMIT 50;
@@ -927,39 +928,39 @@ ORDER BY "Entity", "Source Timestamp" DESC;
 
 
 -- ─────────────────────────────────────────────────────────────────
--- I6. Snapshot vs Mart Consistency  [CHART: Table]
--- Verifies every active mart record has a current snapshot version
+-- I6. NEWSLETTER_HIST vs UDL.NEWSLETTER Consistency  [CHART: Table]
+-- Verifies UDL.NEWSLETTER matches active NEWSLETTER_HIST records
 -- ─────────────────────────────────────────────────────────────────
 SELECT
-    'Active in mart, missing in snapshot'                     AS "Check",
+    'Active in UDL.NEWSLETTER, missing in HIST active'        AS "Check",
     COUNT(*)                                                 AS "Records"
-FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER m
-LEFT JOIN COMMON_TENANT_DEV.DBT_UDL.SNAP_NEWSLETTER s
-    ON m.tenant_code = s.tenant_code
-   AND m.code = s.code
-   AND s.dbt_valid_to IS NULL
-WHERE s.code IS NULL
+FROM COMMON_TENANT_DEV.UDL.NEWSLETTER m
+LEFT JOIN COMMON_TENANT_DEV.UDL.NEWSLETTER_HIST h
+    ON m.tenant_code = h.tenant_code
+   AND m.code = h.code
+   AND h.active_flag = TRUE
+WHERE h.code IS NULL
 
 UNION ALL
 
 SELECT
-    'Snapshot hash != mart hash (stale snapshot)',
+    'HIST active hash != UDL hash (stale UDL)',
     COUNT(*)
-FROM COMMON_TENANT_DEV.DBT_UDL.WRK_NEWSLETTER m
-INNER JOIN COMMON_TENANT_DEV.DBT_UDL.SNAP_NEWSLETTER s
-    ON m.tenant_code = s.tenant_code
-   AND m.code = s.code
-   AND s.dbt_valid_to IS NULL
-WHERE m.hash_value != s.hash_value
+FROM COMMON_TENANT_DEV.UDL.NEWSLETTER m
+INNER JOIN COMMON_TENANT_DEV.UDL.NEWSLETTER_HIST h
+    ON m.tenant_code = h.tenant_code
+   AND m.code = h.code
+   AND h.active_flag = TRUE
+WHERE m.hash_value != h.hash_value
 
 UNION ALL
 
 SELECT
-    'Snapshot versions per newsletter (avg)',
+    'HIST versions per newsletter (avg)',
     ROUND(AVG(version_count), 1)
 FROM (
     SELECT tenant_code, code, COUNT(*) AS version_count
-    FROM COMMON_TENANT_DEV.DBT_UDL.SNAP_NEWSLETTER
+    FROM COMMON_TENANT_DEV.UDL.NEWSLETTER_HIST
     GROUP BY 1, 2
 );
 

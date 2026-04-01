@@ -110,3 +110,27 @@ sources:
         description: >
           Newsletter category archive table. Used during full-load runs
           in combination with the raw view.
+
+  - name: udl_published
+    description: "Published UDL target tables — used for hash-based deduplication in wrk models"
+    database: COMMON_TENANT_DEV
+    schema: UDL
+    tags: ['newsletter', 'published']
+    tables:
+      - name: NEWSLETTER
+        description: >
+          Current active newsletter records. Derived from NEWSLETTER_HIST
+          (active_flag = TRUE). Used as dedup reference by wrk_newsletter.
+      - name: NEWSLETTER_HIST
+        description: >
+          Master SCD-2 accumulator for newsletters. Contains all historical
+          versions with active_flag tracking. The publish procedure maintains
+          this as the single source of truth.
+      - name: NEWSLETTER_INTERACTION
+        description: >
+          Published newsletter interaction records. Used as dedup reference
+          by wrk_newsletter_interaction.
+      - name: NEWSLETTER_CATEGORY
+        description: >
+          Published newsletter category records. Used as dedup reference
+          by wrk_newsletter_category.

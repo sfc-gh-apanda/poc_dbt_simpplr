@@ -49,7 +49,6 @@ USING (
         ('wrk_newsletter',                     'marts',         'DBT_UDL', TRUE,  'int_newsletter_joined',                                       TRUE),
         ('wrk_newsletter_interaction',         'marts',         'DBT_UDL', TRUE,  'stg_newsletter_interaction',                                  TRUE),
         ('wrk_newsletter_category',            'marts',         'DBT_UDL', TRUE,  'stg_newsletter_category',                                     TRUE),
-        ('snap_newsletter',                    'snapshot',      'DBT_UDL', FALSE, 'wrk_newsletter',                                              TRUE),
         ('pipeline_complete',                  'sentinel',      'DBT_UDL', TRUE,  'wrk_newsletter,wrk_newsletter_interaction,wrk_newsletter_category', FALSE)
 ) s ON t.model_name = s.model_name
 WHEN MATCHED THEN UPDATE SET

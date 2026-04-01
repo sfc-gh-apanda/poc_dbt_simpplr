@@ -4,8 +4,10 @@ PUBLISH TO TARGET MACRO
 ═══════════════════════════════════════════════════════════════════════════════
 
 Called as a post-hook on the pipeline_complete sentinel model.
-Invokes PRC_DBT_PUBLISH_TO_TARGET which atomically clones all 3 mart tables
-from DBT_UDL → UDL and appends to NEWSLETTER_HIST, in a single transaction.
+Invokes PRC_DBT_PUBLISH_TO_TARGET which performs HIST-as-master publish:
+  NEWSLETTER: wrk delta → NEWSLETTER_HIST (SCD-2) → TRUNCATE+INSERT UDL.NEWSLETTER
+  INTERACTION / CATEGORY: delta MERGE into UDL (preserves Time Travel)
+All within a single transaction for atomicity.
 
 Prerequisites:
   Run setup/publish_archive_setup.sql to create the stored procedure.

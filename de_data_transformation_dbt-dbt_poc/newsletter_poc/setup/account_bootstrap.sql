@@ -6,9 +6,8 @@
 --   1. Database and schemas
 --   2. Source tables (3 raw views)
 --   3. Archive tables (3, same structure as raw)
---   4. UDL target tables (NEWSLETTER, NEWSLETTER_INTERACTION, NEWSLETTER_CATEGORY
---      — must pre-exist for MERGE-based publish)
---   5. UDL.NEWSLETTER_HIST (append-only history accumulator)
+--   4. UDL target tables (NEWSLETTER, NEWSLETTER_INTERACTION, NEWSLETTER_CATEGORY)
+--   5. UDL.NEWSLETTER_HIST (master SCD-2 accumulator with active_flag tracking)
 --   6. Sample data (newsletters, interactions, categories)
 --   7. External access integration for dbt packages (dbt_utils, dbt_expectations)
 --
@@ -46,10 +45,10 @@ CREATE SCHEMA IF NOT EXISTS SHARED_SERVICES_STAGING
     COMMENT = 'Raw source views and archive tables (Kafka-ingested newsletter events)';
 
 CREATE SCHEMA IF NOT EXISTS UDL
-    COMMENT = 'User-facing target tables — published atomically from DBT_UDL via merge+clone';
+    COMMENT = 'User-facing target tables — NEWSLETTER derived from NEWSLETTER_HIST, INTERACTION/CATEGORY via MERGE';
 
 CREATE SCHEMA IF NOT EXISTS DBT_UDL
-    COMMENT = 'dbt work tables (wrk_*, snapshots, seeds, pipeline_complete)';
+    COMMENT = 'dbt delta work tables (wrk_*, seeds, pipeline_complete)';
 
 CREATE SCHEMA IF NOT EXISTS UDL_BATCH_PROCESS
     COMMENT = 'Stored procedures for publish, archive, and retry operations';
@@ -130,9 +129,9 @@ CREATE TABLE IF NOT EXISTS SHARED_SERVICES_STAGING.ENL_NEWSLETTER_CATEGORY_ARCHI
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════
--- 5. UDL TARGET TABLES — Must pre-exist for the MERGE-based publish procedure.
---    Column order matches the wrk_* contracts in _marts.yml.
---    NEWSLETTER_SCD2 is NOT created here — CLONE creates it automatically.
+-- 5. UDL TARGET TABLES — Must pre-exist for the HIST-as-master publish procedure.
+--    NEWSLETTER: derived from NEWSLETTER_HIST (active_flag = TRUE).
+--    INTERACTION / CATEGORY: populated via delta MERGE from wrk_* tables.
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER (
@@ -251,10 +250,11 @@ CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER_CATEGORY (
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════
--- 6. UDL.NEWSLETTER_HIST — Must pre-exist for the publish procedure INSERT
+-- 6. UDL.NEWSLETTER_HIST — Master SCD-2 accumulator (HIST-as-master pattern)
+--    Contains ALL versions with active_flag tracking:
+--      active_flag=TRUE  → current active record (appears in UDL.NEWSLETTER)
+--      active_flag=FALSE → superseded historical version
 --    Column order matches wrk_newsletter contract + publish tracking columns.
---    The dbt audit columns are also included here (publish_archive_setup.sql
---    adds them via ALTER IF NOT EXISTS as a safety net).
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER_HIST (
@@ -699,7 +699,7 @@ FROM COMMON_TENANT_DEV.INFORMATION_SCHEMA.TABLES
 WHERE TABLE_SCHEMA = 'SHARED_SERVICES_STAGING'
 ORDER BY TABLE_NAME;
 
--- Check UDL tables (3 fact tables + NEWSLETTER_HIST — all empty until first publish)
+-- Check UDL tables (NEWSLETTER, NEWSLETTER_INTERACTION, NEWSLETTER_CATEGORY, NEWSLETTER_HIST — all empty until first publish)
 SELECT TABLE_SCHEMA, TABLE_NAME, ROW_COUNT
 FROM COMMON_TENANT_DEV.INFORMATION_SCHEMA.TABLES
 WHERE TABLE_SCHEMA = 'UDL'

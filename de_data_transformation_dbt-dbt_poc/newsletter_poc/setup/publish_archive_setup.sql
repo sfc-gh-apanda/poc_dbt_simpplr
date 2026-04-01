@@ -4,13 +4,13 @@
 --
 -- PRC_MERGE_PUBLISH:
 --   Dynamic MERGE helper — builds MERGE SQL from INFORMATION_SCHEMA metadata.
---   Only touches changed rows (hash-based), preserves Time Travel on UDL tables.
+--   Used for INTERACTION and CATEGORY (no _HIST table, delta MERGE into UDL).
 --
 -- PRC_DBT_PUBLISH_TO_TARGET:
---   Hybrid Merge+Clone from DBT_UDL → UDL:
---     MERGE for 3 fact tables (preserves Time Travel)
---     CLONE for SCD2 (history table — Time Travel is redundant)
---     INSERT for NEWSLETTER_HIST (append-only accumulator)
+--   HIST-as-master publish from DBT_UDL → UDL:
+--     1. NEWSLETTER: deactivate superseded in NEWSLETTER_HIST, insert new active
+--        rows, then TRUNCATE+INSERT UDL.NEWSLETTER from active HIST records
+--     2. INTERACTION / CATEGORY: delta MERGE into UDL tables (preserves Time Travel)
 --   All within a single transaction for atomicity.
 --
 -- PRC_DBT_ARCHIVE_RAW_DATA:
@@ -25,6 +25,7 @@ USE DATABASE COMMON_TENANT_DEV;
 --    Dynamic MERGE helper: builds column lists from INFORMATION_SCHEMA.
 --    Designed to be called within the caller's transaction — no BEGIN/COMMIT.
 --    Merge key: (TENANT_CODE, CODE).  Skip condition: HASH_VALUE unchanged.
+--    Delta-aware: no WHEN NOT MATCHED BY SOURCE (wrk has delta only, not full state).
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 CREATE OR REPLACE PROCEDURE UDL_BATCH_PROCESS.PRC_MERGE_PUBLISH(
@@ -66,9 +67,8 @@ BEGIN
         'MERGE INTO ' || :P_TARGET_SCHEMA || '.' || :P_TARGET_TABLE || ' tgt ' ||
         'USING ' || :P_SOURCE_SCHEMA || '.' || :P_SOURCE_TABLE || ' src ' ||
         'ON tgt.TENANT_CODE = src.TENANT_CODE AND tgt.CODE = src.CODE ' ||
-        'WHEN MATCHED AND src.HASH_VALUE != tgt.HASH_VALUE THEN UPDATE SET ' || :v_update_set || ' ' ||
-        'WHEN NOT MATCHED THEN INSERT (' || :v_all_cols || ') VALUES (' || :v_src_cols || ') ' ||
-        'WHEN NOT MATCHED BY SOURCE THEN DELETE';
+        'WHEN MATCHED THEN UPDATE SET ' || :v_update_set || ' ' ||
+        'WHEN NOT MATCHED THEN INSERT (' || :v_all_cols || ') VALUES (' || :v_src_cols || ')';
 
     EXECUTE IMMEDIATE :v_merge_sql;
 
@@ -79,7 +79,9 @@ $$;
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- 2. PRC_DBT_PUBLISH_TO_TARGET
---    Hybrid publish: MERGE fact tables + CLONE SCD2 + INSERT history
+--    HIST-as-master publish:
+--      NEWSLETTER: deactivate in HIST → insert active → TRUNCATE+INSERT UDL.NEWSLETTER
+--      INTERACTION / CATEGORY: delta MERGE into UDL (preserves Time Travel)
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 CREATE OR REPLACE PROCEDURE UDL_BATCH_PROCESS.PRC_DBT_PUBLISH_TO_TARGET(
@@ -91,9 +93,11 @@ EXECUTE AS CALLER
 AS
 $$
 DECLARE
-    v_nl_count  INTEGER;
-    v_nli_count INTEGER;
-    v_nlc_count INTEGER;
+    v_nl_count       INTEGER;
+    v_nli_count      INTEGER;
+    v_nlc_count      INTEGER;
+    v_deactivated    INTEGER;
+    v_hist_inserted  INTEGER;
 BEGIN
 
     SELECT COUNT(*) INTO v_nl_count  FROM DBT_UDL.WRK_NEWSLETTER;
@@ -102,29 +106,89 @@ BEGIN
 
     BEGIN TRANSACTION;
 
-    -- ─── MERGE: 3 fact tables (preserves Time Travel on UDL targets) ───
-    CALL UDL_BATCH_PROCESS.PRC_MERGE_PUBLISH(
-        'DBT_UDL', 'WRK_NEWSLETTER', 'UDL', 'NEWSLETTER'
-    );
+    -- ═══════════════════════════════════════════════════════════════
+    -- NEWSLETTER: HIST-as-master SCD-2 pattern
+    -- Step 1: Deactivate superseded records in NEWSLETTER_HIST
+    -- ═══════════════════════════════════════════════════════════════
+    UPDATE UDL.NEWSLETTER_HIST h
+    SET    h.ACTIVE_FLAG      = FALSE,
+           h.INACTIVE_DATE    = CURRENT_TIMESTAMP()::TIMESTAMP_NTZ,
+           h.UPDATED_BY       = CURRENT_USER(),
+           h.UPDATED_DATETIME = CURRENT_TIMESTAMP()::TIMESTAMP_NTZ
+    WHERE  h.ACTIVE_FLAG = TRUE
+      AND  EXISTS (
+               SELECT 1
+               FROM   DBT_UDL.WRK_NEWSLETTER w
+               WHERE  w.TENANT_CODE = h.TENANT_CODE
+                 AND  w.CODE        = h.CODE
+           );
+
+    v_deactivated := SQLROWCOUNT;
+
+    -- Step 2: Insert new active records from WRK into NEWSLETTER_HIST
+    INSERT INTO UDL.NEWSLETTER_HIST (
+        ID, DATA_SOURCE_CODE, TENANT_CODE, STAGING_ID, CODE, NAME, SUBJECT,
+        SENDER_ADDRESS, SEND_AS_EMAIL, SEND_AS_SMS, SEND_AS_MS_TEAMS_MESSAGE,
+        SEND_AS_SLACK_MESSAGE, SEND_AS_INTRANET, SCHEDULED_AT, SENT_AT,
+        NEWSLETTER_CREATED_BY_CODE, NEWSLETTER_UPDATED_BY_CODE,
+        NEWSLETTER_CREATED_DATETIME, NEWSLETTER_UPDATED_DATETIME,
+        STATUS_CODE, CATEGORY_CODE, TEMPLATE_CODE, THEME_CODE,
+        IS_ARCHIVED, SEND_AS_TIMEZONE_AWARE_SCHEDULE, REPLY_TO_EMAIL_ADDRESS,
+        RECIPIENT_INFO, RECIPIENT_TYPE_CODE, IS_DELETED, DELETED_NOTE,
+        DELETED_DATETIME, ACTIVE_FLAG, ACTIVE_DATE, INACTIVE_DATE,
+        CREATED_BY, CREATED_DATETIME, UPDATED_BY, UPDATED_DATETIME,
+        HASH_VALUE, RECIPIENT_NAME, ACTUAL_DELIVERY_SYSTEM_TYPE,
+        DBT_LOADED_AT, DBT_RUN_ID, DBT_BATCH_ID, DBT_SOURCE_MODEL,
+        DBT_ENVIRONMENT, PUBLISHED_BY_RUN_ID, PUBLISHED_AT
+    )
+    SELECT
+        w.ID, w.DATA_SOURCE_CODE, w.TENANT_CODE, w.STAGING_ID, w.CODE, w.NAME,
+        w.SUBJECT, w.SENDER_ADDRESS, w.SEND_AS_EMAIL, w.SEND_AS_SMS,
+        w.SEND_AS_MS_TEAMS_MESSAGE, w.SEND_AS_SLACK_MESSAGE, w.SEND_AS_INTRANET,
+        w.SCHEDULED_AT, w.SENT_AT, w.NEWSLETTER_CREATED_BY_CODE,
+        w.NEWSLETTER_UPDATED_BY_CODE, w.NEWSLETTER_CREATED_DATETIME,
+        w.NEWSLETTER_UPDATED_DATETIME, w.STATUS_CODE, w.CATEGORY_CODE,
+        w.TEMPLATE_CODE, w.THEME_CODE, w.IS_ARCHIVED,
+        w.SEND_AS_TIMEZONE_AWARE_SCHEDULE, w.REPLY_TO_EMAIL_ADDRESS,
+        w.RECIPIENT_INFO, w.RECIPIENT_TYPE_CODE, w.IS_DELETED, w.DELETED_NOTE,
+        w.DELETED_DATETIME, TRUE, CURRENT_TIMESTAMP()::TIMESTAMP_NTZ, NULL,
+        CURRENT_USER(), CURRENT_TIMESTAMP()::TIMESTAMP_NTZ, NULL, NULL,
+        w.HASH_VALUE, w.RECIPIENT_NAME, w.ACTUAL_DELIVERY_SYSTEM_TYPE,
+        w.DBT_LOADED_AT, w.DBT_RUN_ID, w.DBT_BATCH_ID, w.DBT_SOURCE_MODEL,
+        w.DBT_ENVIRONMENT, :P_RUN_ID, CURRENT_TIMESTAMP()::TIMESTAMP_NTZ
+    FROM DBT_UDL.WRK_NEWSLETTER w;
+
+    v_hist_inserted := SQLROWCOUNT;
+
+    -- Step 3: Derive UDL.NEWSLETTER from active HIST records (preserves Time Travel)
+    TRUNCATE TABLE UDL.NEWSLETTER;
+    INSERT INTO UDL.NEWSLETTER
+    SELECT
+        ID, DATA_SOURCE_CODE, TENANT_CODE, STAGING_ID, CODE, NAME, SUBJECT,
+        SENDER_ADDRESS, SEND_AS_EMAIL, SEND_AS_SMS, SEND_AS_MS_TEAMS_MESSAGE,
+        SEND_AS_SLACK_MESSAGE, SEND_AS_INTRANET, SCHEDULED_AT, SENT_AT,
+        NEWSLETTER_CREATED_BY_CODE, NEWSLETTER_UPDATED_BY_CODE,
+        NEWSLETTER_CREATED_DATETIME, NEWSLETTER_UPDATED_DATETIME,
+        STATUS_CODE, CATEGORY_CODE, TEMPLATE_CODE, THEME_CODE,
+        IS_ARCHIVED, SEND_AS_TIMEZONE_AWARE_SCHEDULE, REPLY_TO_EMAIL_ADDRESS,
+        RECIPIENT_INFO, RECIPIENT_TYPE_CODE, IS_DELETED, DELETED_NOTE,
+        DELETED_DATETIME, ACTIVE_FLAG, ACTIVE_DATE, INACTIVE_DATE,
+        CREATED_BY, CREATED_DATETIME, UPDATED_BY, UPDATED_DATETIME,
+        HASH_VALUE, RECIPIENT_NAME, ACTUAL_DELIVERY_SYSTEM_TYPE,
+        DBT_LOADED_AT, DBT_RUN_ID, DBT_BATCH_ID, DBT_SOURCE_MODEL,
+        DBT_ENVIRONMENT
+    FROM UDL.NEWSLETTER_HIST
+    WHERE ACTIVE_FLAG = TRUE;
+
+    -- ═══════════════════════════════════════════════════════════════
+    -- INTERACTION + CATEGORY: delta MERGE (preserves Time Travel)
+    -- ═══════════════════════════════════════════════════════════════
     CALL UDL_BATCH_PROCESS.PRC_MERGE_PUBLISH(
         'DBT_UDL', 'WRK_NEWSLETTER_INTERACTION', 'UDL', 'NEWSLETTER_INTERACTION'
     );
     CALL UDL_BATCH_PROCESS.PRC_MERGE_PUBLISH(
         'DBT_UDL', 'WRK_NEWSLETTER_CATEGORY', 'UDL', 'NEWSLETTER_CATEGORY'
     );
-
-    -- ─── CLONE: SCD2 (Time Travel redundant — table IS the history) ───
-    CREATE OR REPLACE TABLE UDL.NEWSLETTER_SCD2
-        CLONE DBT_UDL.SNAP_NEWSLETTER
-        COPY GRANTS;
-
-    -- ─── INSERT: append current newsletter state to history table ───
-    INSERT INTO UDL.NEWSLETTER_HIST
-    SELECT
-        n.*,
-        :P_RUN_ID   AS published_by_run_id,
-        CURRENT_TIMESTAMP()::TIMESTAMP_NTZ AS published_at
-    FROM UDL.NEWSLETTER n;
 
     COMMIT;
 
@@ -142,7 +206,7 @@ BEGIN
         'publish_to_target',
         'UDL',
         CURRENT_DATABASE(),
-        'merge_clone',
+        'hist_as_master',
         :P_RUN_ID || '_publish',
         'SUCCESS',
         CURRENT_TIMESTAMP(),
@@ -155,12 +219,14 @@ BEGIN
     );
 
     RETURN OBJECT_CONSTRUCT(
-        'status',      'success',
-        'run_id',      P_RUN_ID,
-        'strategy',    'hybrid_merge_clone',
-        'newsletter',  v_nl_count,
-        'interaction', v_nli_count,
-        'category',    v_nlc_count
+        'status',           'success',
+        'run_id',           P_RUN_ID,
+        'strategy',         'hist_as_master',
+        'nl_delta',         v_nl_count,
+        'nl_deactivated',   v_deactivated,
+        'nl_hist_inserted', v_hist_inserted,
+        'interaction',      v_nli_count,
+        'category',         v_nlc_count
     )::VARCHAR;
 
 EXCEPTION
@@ -286,9 +352,9 @@ $$;
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════
--- 3. Add dbt audit columns + publish tracking columns to NEWSLETTER_HIST
---    These columns are present on WRK_NEWSLETTER (and therefore on
---    UDL.NEWSLETTER after CLONE). The INSERT * requires HIST to match.
+-- 3. Safety net: ensure NEWSLETTER_HIST has all required columns
+--    The DDL in account_bootstrap.sql creates these, but ALTER IF NOT EXISTS
+--    guards against partial setups.
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 ALTER TABLE UDL.NEWSLETTER_HIST ADD COLUMN IF NOT EXISTS

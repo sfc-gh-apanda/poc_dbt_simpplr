@@ -1,13 +1,9 @@
 {{
     config(
-        materialized='incremental',
-        unique_key=['tenant_code', 'code'],
-        incremental_strategy='merge',
-        on_schema_change='fail',
-        merge_exclude_columns=['id'],
+        materialized='table',
         schema='DBT_UDL',
         cluster_by=['SUBSTRING(tenant_code, -5)'],
-        tags=['newsletter_interaction', 'wrk', 'merge'],
+        tags=['newsletter_interaction', 'wrk', 'delta'],
         query_tag='dbt_wrk_newsletter_interaction',
         post_hook=["{{ log_model_with_row_count() }}"]
     )
@@ -15,12 +11,6 @@
 
 WITH source_data AS (
     SELECT * FROM {{ ref('stg_newsletter_interaction') }}
-    {% if is_incremental() %}
-    WHERE created_datetime >= (
-        SELECT COALESCE(MAX(dbt_loaded_at), '2000-01-01'::TIMESTAMP_NTZ)
-        FROM {{ this }}
-    )
-    {% endif %}
 ),
 
 ranked AS (
@@ -37,21 +27,15 @@ latest AS (
     SELECT * FROM ranked WHERE rn = 1
 ),
 
-{% if is_incremental() %}
 deduped AS (
     SELECT l.*
     FROM latest l
-    LEFT JOIN {{ this }} t
+    LEFT JOIN {{ source('udl_published', 'NEWSLETTER_INTERACTION') }} t
         ON l.tenant_code = t.tenant_code
        AND l.code = t.code
        AND l.hash_value = t.hash_value
     WHERE t.hash_value IS NULL
 ),
-{% else %}
-deduped AS (
-    SELECT * FROM latest
-),
-{% endif %}
 
 ref_interaction AS (
     SELECT code AS interaction_type_code, identifier_shared_service
@@ -107,12 +91,8 @@ enriched AS (
 
 final AS (
     SELECT
-        {% if is_incremental() %}
-            ROW_NUMBER() OVER (ORDER BY kafka_timestamp)
-                + (SELECT COALESCE(MAX(id), 0) FROM {{ this }}) AS id,
-        {% else %}
-            ROW_NUMBER() OVER (ORDER BY kafka_timestamp) AS id,
-        {% endif %}
+        ROW_NUMBER() OVER (ORDER BY kafka_timestamp)
+            + COALESCE((SELECT MAX(id) FROM {{ source('udl_published', 'NEWSLETTER_INTERACTION') }}), 0) AS id,
 
         {{ data_source_code('tenant_code') }}                        AS data_source_code,
         COALESCE(tenant_code, 'N/A')                                 AS tenant_code,
