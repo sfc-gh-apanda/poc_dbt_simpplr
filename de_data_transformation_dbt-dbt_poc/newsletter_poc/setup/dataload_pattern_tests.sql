@@ -8,14 +8,21 @@
 --   ROUND 2: Incremental Merge + SCD-2 (modified record + new record)
 --   ROUND 3: Delete Handling (NEWSLETTER_DELETED event → is_deleted flag)
 --   ROUND 4: Hash-Based Dedup (same data re-arrives, no change)
---   ROUND 5: Publish Verification (clone+swap DBT_UDL → UDL)
+--   ROUND 5: Publish Verification (HIST-as-master + MERGE → UDL)
 --   ROUND 6: Full Load with Archive Tables
 --
 -- How to use:
 --   1. Run account_bootstrap.sql through test_logging_setup.sql first
---   2. Execute each ROUND in order — run the BEFORE queries, then dbt build,
+--   2. Run dbt deps + dbt seed (one-time, before Round 1)
+--   3. Execute each ROUND in order — run the BEFORE queries, then dbt build,
 --      then the AFTER queries.
---   3. Each round has clear EXPECTED results documented.
+--   4. Each round has clear EXPECTED results documented.
+--
+-- Airflow vars:
+--   batch_run_id            — unique identifier from Airflow DAG run (integer)
+--   data_process_start_time — narrow delta window start (TIMESTAMP)
+--   data_process_end_time   — narrow delta window end (TIMESTAMP)
+--   Set the window to cover the created_datetime range of the data for each round.
 --
 -- Database: COMMON_TENANT_DEV
 -- ═══════════════════════════════════════════════════════════════════════════════
@@ -26,8 +33,26 @@ USE DATABASE COMMON_TENANT_DEV;
 
 
 -- ╔═══════════════════════════════════════════════════════════════════════════╗
+-- ║  PRE-REQUISITE: Install packages + load seed/reference data (once)       ║
+-- ╚═══════════════════════════════════════════════════════════════════════════╝
+
+-- Install dbt_utils and dbt_expectations packages
+-- EXECUTE DBT PROJECT
+--     FROM @COMMON_TENANT_DEV.DBT_UDL.DBT_STAGE
+--     PROJECT_ROOT = '/newsletter_poc'
+--     ARGS = 'deps';
+
+-- Load reference/seed tables (status, recipient_type, block_type, etc.)
+-- EXECUTE DBT PROJECT
+--     FROM @COMMON_TENANT_DEV.DBT_UDL.DBT_STAGE
+--     PROJECT_ROOT = '/newsletter_poc'
+--     ARGS = 'seed --target dev';
+
+
+-- ╔═══════════════════════════════════════════════════════════════════════════╗
 -- ║  ROUND 1: INITIAL FULL LOAD                                             ║
 -- ║  Pattern: Full table build (no incremental), dedup via ROW_NUMBER        ║
+-- ║  Window: 2026-03-01 → 2026-03-24 (covers all bootstrap data)            ║
 -- ╚═══════════════════════════════════════════════════════════════════════════╝
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -68,9 +93,16 @@ WHERE TABLE_SCHEMA = 'DBT_UDL' AND TABLE_NAME IN ('WRK_NEWSLETTER', 'WRK_NEWSLET
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- ACTION: Run first dbt build
+-- ACTION: Run first dbt build (batch_run_id=1001, window covers all bootstrap data)
 -- ─────────────────────────────────────────────────────────────────────────────
--- EXECUTE DBT PROJECT ... ARGS = 'build --target dev'
+-- EXECUTE DBT PROJECT
+--     FROM @COMMON_TENANT_DEV.DBT_UDL.DBT_STAGE
+--     PROJECT_ROOT = '/newsletter_poc'
+--     ARGS = 'build --target dev --vars ''{
+--         "batch_run_id": 1001,
+--         "data_process_start_time": "2026-03-01 00:00:00",
+--         "data_process_end_time": "2026-03-24 00:00:00"
+--     }''';
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -247,9 +279,18 @@ SELECT
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- ACTION: Run incremental dbt build
+-- ACTION: Run dbt build (batch_run_id=1002, window covers Round 2 inserts)
+--   Modified newsletter created_datetime = 2026-03-25 08:05:00
+--   New newsletter created_datetime      = 2026-03-25 09:05:00
 -- ─────────────────────────────────────────────────────────────────────────────
--- EXECUTE DBT PROJECT ... ARGS = 'build --target dev'
+-- EXECUTE DBT PROJECT
+--     FROM @COMMON_TENANT_DEV.DBT_UDL.DBT_STAGE
+--     PROJECT_ROOT = '/newsletter_poc'
+--     ARGS = 'build --target dev --vars ''{
+--         "batch_run_id": 1002,
+--         "data_process_start_time": "2026-03-24 00:00:00",
+--         "data_process_end_time": "2026-03-26 00:00:00"
+--     }''';
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -309,6 +350,7 @@ SELECT
 -- ╔═══════════════════════════════════════════════════════════════════════════╗
 -- ║  ROUND 3: DELETE HANDLING                                                ║
 -- ║  Pattern: NEWSLETTER_DELETED event → is_deleted=TRUE, SCD-2 captures    ║
+-- ║  Window: 2026-03-26 → 2026-03-27 (covers delete event)                  ║
 -- ╚═══════════════════════════════════════════════════════════════════════════╝
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -363,9 +405,17 @@ SELECT
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- ACTION: Run incremental dbt build
+-- ACTION: Run dbt build (batch_run_id=1003, window covers delete event)
+--   Delete event created_datetime = 2026-03-26 10:05:00
 -- ─────────────────────────────────────────────────────────────────────────────
--- EXECUTE DBT PROJECT ... ARGS = 'build --target dev'
+-- EXECUTE DBT PROJECT
+--     FROM @COMMON_TENANT_DEV.DBT_UDL.DBT_STAGE
+--     PROJECT_ROOT = '/newsletter_poc'
+--     ARGS = 'build --target dev --vars ''{
+--         "batch_run_id": 1003,
+--         "data_process_start_time": "2026-03-26 00:00:00",
+--         "data_process_end_time": "2026-03-27 00:00:00"
+--     }''';
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -403,6 +453,7 @@ ORDER BY active_date;
 -- ╔═══════════════════════════════════════════════════════════════════════════╗
 -- ║  ROUND 4: HASH-BASED DEDUP (NO-OP INCREMENTAL)                          ║
 -- ║  Pattern: Same data arrives again → hash matches → skipped by dedup      ║
+-- ║  Window: 2026-03-27 → 2026-03-28 (empty window — no new source data)    ║
 -- ╚═══════════════════════════════════════════════════════════════════════════╝
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -417,9 +468,17 @@ WHERE code = '85db08a2-3579-49b8-b4a4-1d80fd9021a7';
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- ACTION: Run dbt build WITHOUT inserting any new source data
+-- ACTION: Run dbt build WITHOUT inserting any new source data (batch_run_id=1004)
+--   Window covers a period with no new records → staging reads 0 rows → empty delta
 -- ─────────────────────────────────────────────────────────────────────────────
--- EXECUTE DBT PROJECT ... ARGS = 'build --target dev'
+-- EXECUTE DBT PROJECT
+--     FROM @COMMON_TENANT_DEV.DBT_UDL.DBT_STAGE
+--     PROJECT_ROOT = '/newsletter_poc'
+--     ARGS = 'build --target dev --vars ''{
+--         "batch_run_id": 1004,
+--         "data_process_start_time": "2026-03-27 00:00:00",
+--         "data_process_end_time": "2026-03-28 00:00:00"
+--     }''';
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -509,6 +568,7 @@ SELECT * FROM DBT_UDL.PIPELINE_COMPLETE;
 -- ╔═══════════════════════════════════════════════════════════════════════════╗
 -- ║  ROUND 6: FULL LOAD WITH ARCHIVE TABLES                                 ║
 -- ║  Pattern: is_full_load=true → staging UNIONs raw + archive tables        ║
+-- ║  Window: Wide (2026-03-01 → 2026-03-28) to cover all raw + archive data  ║
 -- ╚═══════════════════════════════════════════════════════════════════════════╝
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -531,9 +591,18 @@ SELECT 'ARCHIVE', COUNT(*) FROM SHARED_SERVICES_STAGING.ENL_NEWSLETTER_ARCHIVE;
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- ACTION: Run dbt build with is_full_load=true (stages will UNION raw+archive)
+-- ACTION: Run dbt build with is_full_load=true (batch_run_id=1006)
+--   Wide window + is_full_load=true → stages UNION raw + archive tables
 -- ─────────────────────────────────────────────────────────────────────────────
--- EXECUTE DBT PROJECT ... ARGS = 'build --target dev --vars ''{is_full_load: true}'''
+-- EXECUTE DBT PROJECT
+--     FROM @COMMON_TENANT_DEV.DBT_UDL.DBT_STAGE
+--     PROJECT_ROOT = '/newsletter_poc'
+--     ARGS = 'build --target dev --vars ''{
+--         "batch_run_id": 1006,
+--         "data_process_start_time": "2026-03-01 00:00:00",
+--         "data_process_end_time": "2026-03-28 00:00:00",
+--         "is_full_load": true
+--     }''';
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
