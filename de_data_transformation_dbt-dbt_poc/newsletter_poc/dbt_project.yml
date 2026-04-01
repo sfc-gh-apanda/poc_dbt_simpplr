@@ -114,6 +114,7 @@ models:
     # ═══════════════════════════════════════════════════════════════
     marts:
       +materialized: incremental
+      +transient: false
       +on_schema_change: fail
       +schema: DBT_UDL
       +tags: ['newsletter', 'marts', 'merge']
@@ -129,5 +130,6 @@ models:
 snapshots:
   newsletter_poc:
     +schema: DBT_UDL
+    +transient: false
     +tags: ['newsletter', 'snapshot', 'scd2']
     +query_tag: 'dbt_newsletter_snapshots'
