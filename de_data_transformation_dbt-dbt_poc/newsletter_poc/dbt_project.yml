@@ -62,8 +62,7 @@ vars:
   enable_publish: true
 
   # Archive: move processed raw records to archive tables after publish
-  # Default false — enable via --vars '{enable_archive: true}' or Airflow flag
-  enable_archive: false
+  enable_archive: true
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SEED CONFIGURATIONS
