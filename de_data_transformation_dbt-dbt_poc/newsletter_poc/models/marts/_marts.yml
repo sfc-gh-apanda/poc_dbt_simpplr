@@ -124,6 +124,8 @@ models:
         data_type: VARCHAR(16777216)
       - name: actual_delivery_system_type
         data_type: VARCHAR(16777216)
+      - name: batch_run_id
+        data_type: NUMBER(38,0)
       - name: dbt_loaded_at
         data_type: TIMESTAMP_NTZ
         constraints:
@@ -253,6 +255,8 @@ models:
           - type: not_null
         tests:
           - not_null
+      - name: batch_run_id
+        data_type: NUMBER(38,0)
       - name: dbt_loaded_at
         data_type: TIMESTAMP_NTZ
         constraints:
@@ -338,6 +342,8 @@ models:
           - type: not_null
         tests:
           - not_null
+      - name: batch_run_id
+        data_type: NUMBER(38,0)
       - name: dbt_loaded_at
         data_type: TIMESTAMP_NTZ
         constraints:

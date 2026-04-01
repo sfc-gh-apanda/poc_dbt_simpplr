@@ -9,6 +9,9 @@ Invokes PRC_DBT_PUBLISH_TO_TARGET which performs HIST-as-master publish:
   INTERACTION / CATEGORY: delta MERGE into UDL (preserves Time Travel)
 All within a single transaction for atomicity.
 
+Passes both invocation_id (dbt-internal) and batch_run_id (Airflow-sourced)
+for end-to-end traceability.
+
 Prerequisites:
   Run setup/publish_archive_setup.sql to create the stored procedure.
 
@@ -19,7 +22,10 @@ Prerequisites:
     {% if var('enable_publish', true) and execute %}
 
         {% set sql %}
-            CALL UDL_BATCH_PROCESS.PRC_DBT_PUBLISH_TO_TARGET('{{ invocation_id }}');
+            CALL UDL_BATCH_PROCESS.PRC_DBT_PUBLISH_TO_TARGET(
+                '{{ invocation_id }}',
+                {{ var('batch_run_id', 0) }}
+            );
         {% endset %}
 
         {% set result = run_query(sql) %}

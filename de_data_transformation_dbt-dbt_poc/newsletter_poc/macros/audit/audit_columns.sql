@@ -8,9 +8,10 @@ Existing Scala-compatible columns (created_by, created_datetime, active_flag, et
 are preserved in each model; these macros ADD dbt-specific tracking on top.
 
 Columns Generated:
+  - batch_run_id      : Airflow batch run ID (end-to-end traceability, consistent across retries)
+  - dbt_loaded_at     : Timestamp when dbt loaded the record
   - dbt_run_id        : Unique dbt invocation ID
   - dbt_batch_id      : Unique per-model-per-run identifier
-  - dbt_loaded_at     : Timestamp when dbt loaded the record
   - dbt_source_model  : Name of the dbt model that produced the record
   - dbt_environment   : Target environment (dev / prod)
 
@@ -19,6 +20,7 @@ Columns Generated:
 
 
 {% macro audit_columns() %}
+    {{ var('batch_run_id', 0) }}::INTEGER                    AS batch_run_id,
     CURRENT_TIMESTAMP()::TIMESTAMP_NTZ                       AS dbt_loaded_at,
     '{{ invocation_id }}'::VARCHAR(50)                       AS dbt_run_id,
     MD5('{{ invocation_id }}' || '{{ this.name }}')::VARCHAR(32) AS dbt_batch_id,
@@ -28,6 +30,7 @@ Columns Generated:
 
 
 {% macro audit_columns_incremental(existing_alias='existing') %}
+    {{ var('batch_run_id', 0) }}::INTEGER                    AS batch_run_id,
     CURRENT_TIMESTAMP()::TIMESTAMP_NTZ                       AS dbt_loaded_at,
     '{{ invocation_id }}'::VARCHAR(50)                       AS dbt_run_id,
     MD5('{{ invocation_id }}' || '{{ this.name }}')::VARCHAR(32) AS dbt_batch_id,

@@ -3,7 +3,9 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 #
 # FEATURES:
-#   - Audit columns (dbt_run_id, dbt_batch_id, dbt_loaded_at, dbt_source_model)
+#   - Airflow watermark integration (batch_run_id, data_process_start/end_time)
+#   - Narrow delta reads (same start→end window as Scala pipeline)
+#   - Audit columns (batch_run_id, dbt_run_id, dbt_batch_id, dbt_loaded_at, dbt_source_model)
 #   - Row hash for change detection (entity-specific, Scala-compatible)
 #   - Delta-only work tables with hash-based deduplication against UDL
 #   - Processing tracking (run log, model log)
@@ -47,6 +49,10 @@ on-run-end:
 vars:
   default_null_timestamp: '2000-01-01 00:00:00'
 
+  # Airflow watermark: narrow delta window (passed via --vars from Airflow DAG)
+  # Defaults allow standalone dbt build without Airflow (reads everything).
+  batch_run_id: 0
+  data_process_start_time: '2000-01-01 00:00:00'
   data_process_end_time: '9999-12-31 23:59:59'
 
   is_full_load: false

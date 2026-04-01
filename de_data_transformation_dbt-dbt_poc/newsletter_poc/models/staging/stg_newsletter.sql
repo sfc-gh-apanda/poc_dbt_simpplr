@@ -96,6 +96,7 @@ WITH raw_data AS (
     FROM {{ source('shared_services_staging', 'VW_ENL_NEWSLETTER') }} c
     WHERE c.domain_payload::STRING IS NOT NULL
       AND c.domain_payload:id::STRING IS NOT NULL
+      AND c.created_datetime >= '{{ var("data_process_start_time") }}'::TIMESTAMP_NTZ
       AND c.created_datetime <= '{{ var("data_process_end_time") }}'::TIMESTAMP_NTZ
 ),
 
@@ -106,6 +107,7 @@ archive_data AS (
     FROM {{ source('shared_services_staging', 'ENL_NEWSLETTER_ARCHIVE') }} c
     WHERE c.domain_payload::STRING IS NOT NULL
       AND c.domain_payload:id::STRING IS NOT NULL
+      AND c.created_datetime >= '{{ var("data_process_start_time") }}'::TIMESTAMP_NTZ
       AND c.created_datetime <= '{{ var("data_process_end_time") }}'::TIMESTAMP_NTZ
 ),
 

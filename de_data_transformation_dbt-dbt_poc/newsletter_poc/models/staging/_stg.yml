@@ -33,9 +33,10 @@ models:
 
   - name: stg_newsletter_interaction_summary
     description: >
-      Aggregates distinct delivery system types per newsletter from the
-      interaction source. Produces a LISTAGG of delivery channels
-      (Email, SMS, Teams, etc.) for each newsletter.
+      Ephemeral model — aggregates distinct delivery system types per newsletter
+      by reading from stg_newsletter_interaction (no second source scan).
+      Produces a LISTAGG of delivery channels (Email, SMS, Teams, etc.)
+      for each newsletter. Inlined as a CTE into downstream models.
     columns:
       - name: actual_delivery_system_type
         description: "Comma-separated list of delivery channels used"

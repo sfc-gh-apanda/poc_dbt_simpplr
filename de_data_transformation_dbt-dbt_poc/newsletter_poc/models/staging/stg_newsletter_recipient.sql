@@ -22,6 +22,7 @@
 {% set recipient_where %}
     nl.domain_payload::STRING IS NOT NULL
     AND nl.domain_payload:id::STRING IS NOT NULL
+    AND nl.created_datetime >= '{{ var("data_process_start_time") }}'::TIMESTAMP_NTZ
     AND nl.created_datetime <= '{{ var("data_process_end_time") }}'::TIMESTAMP_NTZ
 {% endset %}
 

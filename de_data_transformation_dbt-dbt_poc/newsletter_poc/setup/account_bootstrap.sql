@@ -176,6 +176,7 @@ CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER (
     HASH_VALUE                      VARCHAR(32) NOT NULL,
     RECIPIENT_NAME                  VARCHAR(16777216),
     ACTUAL_DELIVERY_SYSTEM_TYPE     VARCHAR(16777216),
+    BATCH_RUN_ID                    NUMBER(38,0),
     DBT_LOADED_AT                   TIMESTAMP_NTZ,
     DBT_RUN_ID                      VARCHAR(50),
     DBT_BATCH_ID                    VARCHAR(32),
@@ -218,11 +219,14 @@ CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER_INTERACTION (
     UPDATED_BY                      VARCHAR(255),
     UPDATED_DATETIME                TIMESTAMP_NTZ,
     HASH_VALUE                      VARCHAR(32) NOT NULL,
+    BATCH_RUN_ID                    NUMBER(38,0),
     DBT_LOADED_AT                   TIMESTAMP_NTZ,
     DBT_RUN_ID                      VARCHAR(50),
     DBT_BATCH_ID                    VARCHAR(32),
     DBT_SOURCE_MODEL                VARCHAR(100),
-    DBT_ENVIRONMENT                 VARCHAR(20)
+    DBT_ENVIRONMENT                 VARCHAR(20),
+    PUBLISHED_BY_RUN_ID             VARCHAR(100),
+    PUBLISHED_AT                    TIMESTAMP_NTZ
 );
 
 CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER_CATEGORY (
@@ -241,12 +245,25 @@ CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER_CATEGORY (
     UPDATED_BY                      VARCHAR(255),
     UPDATED_DATETIME                TIMESTAMP_NTZ,
     HASH_VALUE                      VARCHAR(32) NOT NULL,
+    BATCH_RUN_ID                    NUMBER(38,0),
     DBT_LOADED_AT                   TIMESTAMP_NTZ,
     DBT_RUN_ID                      VARCHAR(50),
     DBT_BATCH_ID                    VARCHAR(32),
     DBT_SOURCE_MODEL                VARCHAR(100),
-    DBT_ENVIRONMENT                 VARCHAR(20)
+    DBT_ENVIRONMENT                 VARCHAR(20),
+    PUBLISHED_BY_RUN_ID             VARCHAR(100),
+    PUBLISHED_AT                    TIMESTAMP_NTZ
 );
+
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 5b. CLUSTERING — Accelerates hash-dedup JOINs, MERGE publish, and HIST queries.
+--     Critical for multi-billion row tables (especially NEWSLETTER_INTERACTION).
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+ALTER TABLE UDL.NEWSLETTER CLUSTER BY (TENANT_CODE, CODE);
+ALTER TABLE UDL.NEWSLETTER_INTERACTION CLUSTER BY (TENANT_CODE, CODE);
+ALTER TABLE UDL.NEWSLETTER_CATEGORY CLUSTER BY (TENANT_CODE, CODE);
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════
@@ -300,6 +317,7 @@ CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER_HIST (
     recipient_name                  VARCHAR(16777216),
     actual_delivery_system_type     VARCHAR(16777216),
     -- dbt audit columns (matches wrk_newsletter contract)
+    batch_run_id                    NUMBER(38,0),
     dbt_loaded_at                   TIMESTAMP_NTZ,
     dbt_run_id                      VARCHAR(50),
     dbt_batch_id                    VARCHAR(32),
@@ -309,6 +327,8 @@ CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER_HIST (
     published_by_run_id             VARCHAR(100),
     published_at                    TIMESTAMP_NTZ
 );
+
+ALTER TABLE UDL.NEWSLETTER_HIST CLUSTER BY (TENANT_CODE, CODE, ACTIVE_FLAG);
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════

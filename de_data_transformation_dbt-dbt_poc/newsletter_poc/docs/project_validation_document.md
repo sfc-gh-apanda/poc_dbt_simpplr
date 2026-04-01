@@ -48,6 +48,7 @@ This project replaces the existing Scala/Snowpark newsletter ETL pipeline with a
              ▼                       ▼                       ▼
   ┌─────────────────────────────────────────────────────────────────────────────┐
   │  STAGING  (UDL schema)                                 materialized: table  │
+  │  Narrow delta: WHERE created_datetime BETWEEN start AND end (from Airflow)  │
   │  stg_newsletter              Parse 25+ fields from VARIANT JSON             │
   │  stg_newsletter_recipient    LATERAL FLATTEN recipients, LISTAGG            │
   │  stg_newsletter_interaction  Parse interactions, classify device type        │
@@ -282,13 +283,13 @@ newsletter_poc/
 
 ## 6. Model Details
 
-### 6.1 Staging Models (5 models, materialized as `table`)
+### 6.1 Staging Models (4 tables + 1 ephemeral)
 
 | Model | Source | Key Transformations |
 |-------|--------|---------------------|
 | `stg_newsletter` | `VW_ENL_NEWSLETTER` | Parses 25+ fields from VARIANT JSON. Extracts channel flags (email, SMS, Teams, Slack, intranet). Derives `is_deleted` from event type. Extracts `tenant_code` from nested `HEADER:tenant_info` JSON. Computes MD5 hash over all business columns. |
 | `stg_newsletter_recipient` | `VW_ENL_NEWSLETTER` | `LATERAL FLATTEN` on the recipients array. `LISTAGG` to aggregate recipient names into a single comma-separated string per newsletter. |
-| `stg_newsletter_interaction_summary` | `VW_ENL_NEWSLETTER_INTERACTION` | Aggregates `LISTAGG(DISTINCT delivery_system_type)` per newsletter+tenant — populates `actual_delivery_system_type` on the newsletter work table. |
+| `stg_newsletter_interaction_summary` | `stg_newsletter_interaction` (ephemeral — no second source scan) | Aggregates `LISTAGG(DISTINCT delivery_system_type)` per newsletter+tenant — populates `actual_delivery_system_type` on the newsletter work table. |
 | `stg_newsletter_interaction` | `VW_ENL_NEWSLETTER_INTERACTION` | Parses interaction details from VARIANT. Classifies `device_type_code` from `user_agent` string (Desktop, Mobile, Tablet, Bot, Unknown). |
 | `stg_newsletter_category` | `VW_ENL_NEWSLETTER_CATEGORY` | Parses category fields (code, name, created timestamp) from VARIANT. Computes change-detection hash. |
 
@@ -341,15 +342,18 @@ All mart models enforce `contract: enforced: true` with `on_schema_change: fail`
 
 ### 8.1 Audit & Logging
 
-Every model execution is tracked with 5 audit columns:
+Every model execution is tracked with 6 audit columns:
 
 | Column | Description |
 |--------|-------------|
+| `batch_run_id` | Airflow batch run ID — end-to-end traceability, consistent across retries |
 | `dbt_loaded_at` | Timestamp when dbt loaded the record |
 | `dbt_run_id` | dbt invocation ID (unique per run) |
 | `dbt_batch_id` | MD5(invocation_id + model_name) — unique per model per run |
 | `dbt_source_model` | Name of the dbt model that produced the record |
 | `dbt_environment` | Target environment (dev / prod) |
+
+Additionally, all UDL target tables carry `published_by_run_id` (the dbt invocation that triggered publish) and `published_at`, providing a unified publish-event identifier across all three entities.
 
 **Run-level logging:**
 
@@ -414,7 +418,9 @@ Uses `SYSTEM$LOCATE_DBT_ARTIFACTS()` to capture `manifest.json` and `run_results
 |----------|---------|---------|
 | `is_full_load` | `false` | When `true`, staging models UNION raw + archive tables for complete rebuild |
 | `entity_specific_full_load` | `'none'` | Set to `'newsletter'`, `'interaction'`, or `'category'` for per-entity full load |
-| `data_process_end_time` | `'9999-12-31 23:59:59'` | Processing window boundary — filters source data and archival scope |
+| `batch_run_id` | `0` | Airflow batch run ID — passed from BATCH_RUN table for end-to-end traceability |
+| `data_process_start_time` | `'2000-01-01 00:00:00'` | Narrow delta lower bound — from Airflow's `dataProcessStartTime` |
+| `data_process_end_time` | `'9999-12-31 23:59:59'` | Narrow delta upper bound — from Airflow's `dataProcessEndTime` |
 | `enable_publish` | `true` | Toggle HIST-as-master publish to UDL |
 | `enable_archive` | `true` | Toggle raw data archival after publish |
 | `enable_audit_logging` | `true` | Toggle run/model logging to audit tables |
@@ -528,7 +534,8 @@ Dashboard Section H provides 7 reconciliation queries:
 | Feature | Scala Pipeline | dbt Pipeline |
 |---------|---------------|--------------|
 | Language | Scala/Snowpark | SQL + Jinja |
-| Execution | Airflow orchestrated | Snowflake Native dbt |
+| Execution | Airflow orchestrated | Snowflake Native dbt (called from Airflow) |
+| Watermark / Delta | `dataProcessStartTime` → `dataProcessEndTime` from BATCH_RUN | Same: `data_process_start_time` → `data_process_end_time` passed via `--vars` from Airflow |
 | Work table processing | Custom truncate+reload | dbt `table` materialization (delta-only) |
 | Deduplication | Custom hash comparison | Same MD5 hash, dedup against published UDL |
 | SCD-2 history | NEWSLETTER_HIST with active_flag | Same pattern: NEWSLETTER_HIST with active_flag |
@@ -537,8 +544,9 @@ Dashboard Section H provides 7 reconciliation queries:
 | Automated testing | None | 51 tests (not_null, unique, accepted_values, composite uniqueness) |
 | Publish to UDL | DELETE + INSERT (swap) | HIST-as-master (deactivate+insert HIST, TRUNCATE+INSERT newsletter, MERGE others) |
 | Time Travel on UDL | Lost on each publish cycle | Preserved on all tables (TRUNCATE+INSERT and MERGE are DML, not DDL) |
-| Audit trail | BATCH_RUN / PROCESS_RUN | DBT_RUN_LOG / DBT_MODEL_LOG |
-| Run retry | Manual re-run | Smart retry (PRC_DBT_SMART_RETRY) |
+| End-to-end traceability | `CREATED_BATCH_RUN_ID` / `UPDATED_BATCH_RUN_ID` | `batch_run_id` (Airflow) + `dbt_run_id` (dbt) + `published_by_run_id` (publish) |
+| Audit trail | BATCH_RUN / PROCESS_RUN | DBT_RUN_LOG / DBT_MODEL_LOG + batch_run_id link to BATCH_RUN |
+| Run retry | Manual re-run | Smart retry (PRC_DBT_SMART_RETRY) — batch_run_id stays consistent |
 | Monitoring | Manual queries | 28 views + 30+ dashboard queries |
 | Code documentation | Inline comments | YAML descriptions, persist_docs, data_flow.md |
 | Version control | Git | Git + Snowflake Git integration |
@@ -583,7 +591,9 @@ For customer sign-off, validate the following:
 - [ ] All operations are atomic (transaction-scoped)
 
 ### Operational
-- [ ] Audit columns populated on all records (dbt_loaded_at, dbt_run_id, etc.)
+- [ ] Audit columns populated on all records (batch_run_id, dbt_loaded_at, dbt_run_id, etc.)
+- [ ] batch_run_id consistent across all entities within a publish event
+- [ ] published_by_run_id present on all UDL target tables (NEWSLETTER_HIST, INTERACTION, CATEGORY)
 - [ ] Run log captures start/end/duration/status
 - [ ] Failed models are logged with error messages
 - [ ] Retry mechanism identifies and re-runs failed models

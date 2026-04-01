@@ -5,13 +5,15 @@
 -- PRC_MERGE_PUBLISH:
 --   Dynamic MERGE helper — builds MERGE SQL from INFORMATION_SCHEMA metadata.
 --   Used for INTERACTION and CATEGORY (no _HIST table, delta MERGE into UDL).
+--   Stamps PUBLISHED_BY_RUN_ID and PUBLISHED_AT on target after MERGE.
 --
--- PRC_DBT_PUBLISH_TO_TARGET:
+-- PRC_DBT_PUBLISH_TO_TARGET(P_RUN_ID, P_BATCH_RUN_ID):
 --   HIST-as-master publish from DBT_UDL → UDL:
 --     1. NEWSLETTER: deactivate superseded in NEWSLETTER_HIST, insert new active
 --        rows, then TRUNCATE+INSERT UDL.NEWSLETTER from active HIST records
---     2. INTERACTION / CATEGORY: delta MERGE into UDL tables (preserves Time Travel)
+--     2. INTERACTION / CATEGORY: delta MERGE + stamp published_by_run_id
 --   All within a single transaction for atomicity.
+--   P_RUN_ID = dbt invocation_id, P_BATCH_RUN_ID = Airflow batch_run_id
 --
 -- PRC_DBT_ARCHIVE_RAW_DATA:
 --   Archive processed raw records and purge from source tables.
@@ -22,17 +24,19 @@ USE DATABASE COMMON_TENANT_DEV;
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- 1. PRC_MERGE_PUBLISH
---    Dynamic MERGE helper: builds column lists from INFORMATION_SCHEMA.
+--    Dynamic MERGE helper: builds column lists from INFORMATION_SCHEMA metadata.
 --    Designed to be called within the caller's transaction — no BEGIN/COMMIT.
 --    Merge key: (TENANT_CODE, CODE).  Skip condition: HASH_VALUE unchanged.
 --    Delta-aware: no WHEN NOT MATCHED BY SOURCE (wrk has delta only, not full state).
+--    Stamps PUBLISHED_BY_RUN_ID and PUBLISHED_AT on target after MERGE.
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 CREATE OR REPLACE PROCEDURE UDL_BATCH_PROCESS.PRC_MERGE_PUBLISH(
-    P_SOURCE_SCHEMA VARCHAR,
-    P_SOURCE_TABLE  VARCHAR,
-    P_TARGET_SCHEMA VARCHAR,
-    P_TARGET_TABLE  VARCHAR
+    P_SOURCE_SCHEMA      VARCHAR,
+    P_SOURCE_TABLE       VARCHAR,
+    P_TARGET_SCHEMA      VARCHAR,
+    P_TARGET_TABLE       VARCHAR,
+    P_PUBLISHED_BY_RUN_ID VARCHAR DEFAULT NULL
 )
 RETURNS VARCHAR
 LANGUAGE SQL
@@ -72,6 +76,15 @@ BEGIN
 
     EXECUTE IMMEDIATE :v_merge_sql;
 
+    IF (:P_PUBLISHED_BY_RUN_ID IS NOT NULL) THEN
+        EXECUTE IMMEDIATE
+            'UPDATE ' || :P_TARGET_SCHEMA || '.' || :P_TARGET_TABLE || ' tgt ' ||
+            'SET tgt.PUBLISHED_BY_RUN_ID = ''' || :P_PUBLISHED_BY_RUN_ID || ''',' ||
+            '    tgt.PUBLISHED_AT = CURRENT_TIMESTAMP()::TIMESTAMP_NTZ ' ||
+            'FROM ' || :P_SOURCE_SCHEMA || '.' || :P_SOURCE_TABLE || ' src ' ||
+            'WHERE tgt.TENANT_CODE = src.TENANT_CODE AND tgt.CODE = src.CODE';
+    END IF;
+
     RETURN 'SUCCESS';
 END;
 $$;
@@ -82,10 +95,13 @@ $$;
 --    HIST-as-master publish:
 --      NEWSLETTER: deactivate in HIST → insert active → TRUNCATE+INSERT UDL.NEWSLETTER
 --      INTERACTION / CATEGORY: delta MERGE into UDL (preserves Time Travel)
+--    Accepts P_RUN_ID (dbt invocation_id) and P_BATCH_RUN_ID (Airflow batch_run_id)
+--    for end-to-end traceability.
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 CREATE OR REPLACE PROCEDURE UDL_BATCH_PROCESS.PRC_DBT_PUBLISH_TO_TARGET(
-    P_RUN_ID VARCHAR
+    P_RUN_ID        VARCHAR,
+    P_BATCH_RUN_ID  INTEGER DEFAULT 0
 )
 RETURNS VARCHAR
 LANGUAGE SQL
@@ -138,7 +154,7 @@ BEGIN
         DELETED_DATETIME, ACTIVE_FLAG, ACTIVE_DATE, INACTIVE_DATE,
         CREATED_BY, CREATED_DATETIME, UPDATED_BY, UPDATED_DATETIME,
         HASH_VALUE, RECIPIENT_NAME, ACTUAL_DELIVERY_SYSTEM_TYPE,
-        DBT_LOADED_AT, DBT_RUN_ID, DBT_BATCH_ID, DBT_SOURCE_MODEL,
+        BATCH_RUN_ID, DBT_LOADED_AT, DBT_RUN_ID, DBT_BATCH_ID, DBT_SOURCE_MODEL,
         DBT_ENVIRONMENT, PUBLISHED_BY_RUN_ID, PUBLISHED_AT
     )
     SELECT
@@ -154,7 +170,7 @@ BEGIN
         w.DELETED_DATETIME, TRUE, CURRENT_TIMESTAMP()::TIMESTAMP_NTZ, NULL,
         CURRENT_USER(), CURRENT_TIMESTAMP()::TIMESTAMP_NTZ, NULL, NULL,
         w.HASH_VALUE, w.RECIPIENT_NAME, w.ACTUAL_DELIVERY_SYSTEM_TYPE,
-        w.DBT_LOADED_AT, w.DBT_RUN_ID, w.DBT_BATCH_ID, w.DBT_SOURCE_MODEL,
+        w.BATCH_RUN_ID, w.DBT_LOADED_AT, w.DBT_RUN_ID, w.DBT_BATCH_ID, w.DBT_SOURCE_MODEL,
         w.DBT_ENVIRONMENT, :P_RUN_ID, CURRENT_TIMESTAMP()::TIMESTAMP_NTZ
     FROM DBT_UDL.WRK_NEWSLETTER w;
 
@@ -175,19 +191,19 @@ BEGIN
         DELETED_DATETIME, ACTIVE_FLAG, ACTIVE_DATE, INACTIVE_DATE,
         CREATED_BY, CREATED_DATETIME, UPDATED_BY, UPDATED_DATETIME,
         HASH_VALUE, RECIPIENT_NAME, ACTUAL_DELIVERY_SYSTEM_TYPE,
-        DBT_LOADED_AT, DBT_RUN_ID, DBT_BATCH_ID, DBT_SOURCE_MODEL,
+        BATCH_RUN_ID, DBT_LOADED_AT, DBT_RUN_ID, DBT_BATCH_ID, DBT_SOURCE_MODEL,
         DBT_ENVIRONMENT
     FROM UDL.NEWSLETTER_HIST
     WHERE ACTIVE_FLAG = TRUE;
 
     -- ═══════════════════════════════════════════════════════════════
-    -- INTERACTION + CATEGORY: delta MERGE (preserves Time Travel)
+    -- INTERACTION + CATEGORY: delta MERGE + stamp publish traceability
     -- ═══════════════════════════════════════════════════════════════
     CALL UDL_BATCH_PROCESS.PRC_MERGE_PUBLISH(
-        'DBT_UDL', 'WRK_NEWSLETTER_INTERACTION', 'UDL', 'NEWSLETTER_INTERACTION'
+        'DBT_UDL', 'WRK_NEWSLETTER_INTERACTION', 'UDL', 'NEWSLETTER_INTERACTION', :P_RUN_ID
     );
     CALL UDL_BATCH_PROCESS.PRC_MERGE_PUBLISH(
-        'DBT_UDL', 'WRK_NEWSLETTER_CATEGORY', 'UDL', 'NEWSLETTER_CATEGORY'
+        'DBT_UDL', 'WRK_NEWSLETTER_CATEGORY', 'UDL', 'NEWSLETTER_CATEGORY', :P_RUN_ID
     );
 
     COMMIT;
@@ -221,6 +237,7 @@ BEGIN
     RETURN OBJECT_CONSTRUCT(
         'status',           'success',
         'run_id',           P_RUN_ID,
+        'batch_run_id',     P_BATCH_RUN_ID,
         'strategy',         'hist_as_master',
         'nl_delta',         v_nl_count,
         'nl_deactivated',   v_deactivated,
@@ -233,9 +250,10 @@ EXCEPTION
     WHEN OTHER THEN
         ROLLBACK;
         RETURN OBJECT_CONSTRUCT(
-            'status', 'failed',
-            'run_id', P_RUN_ID,
-            'error',  SQLERRM
+            'status',       'failed',
+            'run_id',       P_RUN_ID,
+            'batch_run_id', P_BATCH_RUN_ID,
+            'error',        SQLERRM
         )::VARCHAR;
 END;
 $$;

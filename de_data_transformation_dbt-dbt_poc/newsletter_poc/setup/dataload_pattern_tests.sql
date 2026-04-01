@@ -111,10 +111,10 @@ ORDER BY business_key, active_date;
 -- EXPECTED: 4 rows, all with active_flag = TRUE (all ACTIVE, no history yet)
 
 -- 1G. Audit columns populated
-SELECT code, dbt_loaded_at, dbt_run_id, dbt_batch_id, dbt_source_model, dbt_environment
+SELECT code, batch_run_id, dbt_loaded_at, dbt_run_id, dbt_batch_id, dbt_source_model, dbt_environment
 FROM DBT_UDL.WRK_NEWSLETTER
 LIMIT 3;
--- EXPECTED: All dbt audit columns should be non-null
+-- EXPECTED: All audit columns should be non-null; batch_run_id = 0 when run without Airflow
 
 -- 1H. Publish verification — UDL tables should match DBT_UDL
 SELECT 'UDL.NEWSLETTER' AS table_name, COUNT(*) AS row_count FROM UDL.NEWSLETTER
@@ -479,14 +479,27 @@ FROM UDL.NEWSLETTER WHERE code = '202a20ae-ba80-4d69-ad0f-46febe2e293c';
 
 -- 5C. NEWSLETTER_HIST accumulation: should grow with each build
 SELECT
+    batch_run_id,
     published_by_run_id,
     published_at,
     COUNT(*) AS rows_published
 FROM UDL.NEWSLETTER_HIST
-GROUP BY published_by_run_id, published_at
+GROUP BY batch_run_id, published_by_run_id, published_at
 ORDER BY published_at;
 -- EXPECTED: One group per dbt build, each with the newsletter count at that point
 --   Round 1: 4 rows, Round 2: 5 rows, Round 3: 5 rows, Round 4: 5 rows = 19 total
+--   batch_run_id should be consistent across all records in each publish event
+
+-- 5D. End-to-end traceability: published_by_run_id on INTERACTION and CATEGORY
+SELECT 'NEWSLETTER_INTERACTION' AS entity, published_by_run_id, published_at, COUNT(*) AS rows_count
+FROM UDL.NEWSLETTER_INTERACTION
+GROUP BY published_by_run_id, published_at
+UNION ALL
+SELECT 'NEWSLETTER_CATEGORY', published_by_run_id, published_at, COUNT(*)
+FROM UDL.NEWSLETTER_CATEGORY
+GROUP BY published_by_run_id, published_at
+ORDER BY entity, published_at;
+-- EXPECTED: published_by_run_id populated on all target tables (not just NEWSLETTER_HIST)
 
 -- 5D. Pipeline complete sentinel view should show current state
 SELECT * FROM DBT_UDL.PIPELINE_COMPLETE;
