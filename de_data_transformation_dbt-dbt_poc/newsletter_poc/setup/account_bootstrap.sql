@@ -6,9 +6,11 @@
 --   1. Database and schemas
 --   2. Source tables (3 raw views)
 --   3. Archive tables (3, same structure as raw)
---   4. UDL target table (NEWSLETTER_HIST — must pre-exist for publish procedure)
---   5. Sample data (newsletters, interactions, categories)
---   6. External access integration for dbt packages (dbt_utils, dbt_expectations)
+--   4. UDL target tables (NEWSLETTER, NEWSLETTER_INTERACTION, NEWSLETTER_CATEGORY
+--      — must pre-exist for MERGE-based publish)
+--   5. UDL.NEWSLETTER_HIST (append-only history accumulator)
+--   6. Sample data (newsletters, interactions, categories)
+--   7. External access integration for dbt packages (dbt_utils, dbt_expectations)
 --
 -- Prerequisites:
 --   - ACCOUNTADMIN role (or equivalent with CREATE DATABASE / INTEGRATION)
@@ -44,7 +46,7 @@ CREATE SCHEMA IF NOT EXISTS SHARED_SERVICES_STAGING
     COMMENT = 'Raw source views and archive tables (Kafka-ingested newsletter events)';
 
 CREATE SCHEMA IF NOT EXISTS UDL
-    COMMENT = 'User-facing target tables — published atomically from DBT_UDL via clone+swap';
+    COMMENT = 'User-facing target tables — published atomically from DBT_UDL via merge+clone';
 
 CREATE SCHEMA IF NOT EXISTS DBT_UDL
     COMMENT = 'dbt work tables (wrk_*, snapshots, seeds, pipeline_complete)';
@@ -128,7 +130,128 @@ CREATE TABLE IF NOT EXISTS SHARED_SERVICES_STAGING.ENL_NEWSLETTER_CATEGORY_ARCHI
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════
--- 5. UDL.NEWSLETTER_HIST — Must pre-exist for the publish procedure INSERT
+-- 5. UDL TARGET TABLES — Must pre-exist for the MERGE-based publish procedure.
+--    Column order matches the wrk_* contracts in _marts.yml.
+--    NEWSLETTER_SCD2 is NOT created here — CLONE creates it automatically.
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER (
+    ID                              NUMBER(38,0) NOT NULL,
+    DATA_SOURCE_CODE                VARCHAR(16),
+    TENANT_CODE                     VARCHAR(255) NOT NULL,
+    STAGING_ID                      NUMBER(38,0),
+    CODE                            VARCHAR(255) NOT NULL,
+    NAME                            VARCHAR(16777216),
+    SUBJECT                         VARCHAR(16777216),
+    SENDER_ADDRESS                  VARCHAR(16777216),
+    SEND_AS_EMAIL                   BOOLEAN,
+    SEND_AS_SMS                     BOOLEAN,
+    SEND_AS_MS_TEAMS_MESSAGE        BOOLEAN,
+    SEND_AS_SLACK_MESSAGE           BOOLEAN,
+    SEND_AS_INTRANET                BOOLEAN,
+    SCHEDULED_AT                    TIMESTAMP_NTZ,
+    SENT_AT                         TIMESTAMP_NTZ,
+    NEWSLETTER_CREATED_BY_CODE      VARCHAR(255),
+    NEWSLETTER_UPDATED_BY_CODE      VARCHAR(255),
+    NEWSLETTER_CREATED_DATETIME     TIMESTAMP_NTZ,
+    NEWSLETTER_UPDATED_DATETIME     TIMESTAMP_NTZ,
+    STATUS_CODE                     VARCHAR(255),
+    CATEGORY_CODE                   VARCHAR(255),
+    TEMPLATE_CODE                   VARCHAR(255),
+    THEME_CODE                      VARCHAR(255),
+    IS_ARCHIVED                     BOOLEAN,
+    SEND_AS_TIMEZONE_AWARE_SCHEDULE BOOLEAN,
+    REPLY_TO_EMAIL_ADDRESS          VARCHAR(16777216),
+    RECIPIENT_INFO                  VARIANT,
+    RECIPIENT_TYPE_CODE             VARCHAR(255),
+    IS_DELETED                      BOOLEAN,
+    DELETED_NOTE                    VARCHAR(16777216),
+    DELETED_DATETIME                TIMESTAMP_NTZ,
+    ACTIVE_FLAG                     BOOLEAN NOT NULL,
+    ACTIVE_DATE                     TIMESTAMP_NTZ,
+    INACTIVE_DATE                   TIMESTAMP_NTZ,
+    CREATED_BY                      VARCHAR(255),
+    CREATED_DATETIME                TIMESTAMP_NTZ,
+    UPDATED_BY                      VARCHAR(255),
+    UPDATED_DATETIME                TIMESTAMP_NTZ,
+    HASH_VALUE                      VARCHAR(32) NOT NULL,
+    RECIPIENT_NAME                  VARCHAR(16777216),
+    ACTUAL_DELIVERY_SYSTEM_TYPE     VARCHAR(16777216),
+    DBT_LOADED_AT                   TIMESTAMP_NTZ,
+    DBT_RUN_ID                      VARCHAR(50),
+    DBT_BATCH_ID                    VARCHAR(32),
+    DBT_SOURCE_MODEL                VARCHAR(100),
+    DBT_ENVIRONMENT                 VARCHAR(20)
+);
+
+CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER_INTERACTION (
+    ID                              NUMBER(38,0) NOT NULL,
+    DATA_SOURCE_CODE                VARCHAR(16),
+    TENANT_CODE                     VARCHAR(255) NOT NULL,
+    STAGING_ID                      NUMBER(38,0),
+    CODE                            VARCHAR(255) NOT NULL,
+    NEWSLETTER_CODE                 VARCHAR(255),
+    RECIPIENT_CODE                  VARCHAR(16777216),
+    INTERACTION_TYPE_CODE           VARCHAR(255),
+    DELIVERY_SYSTEM_TYPE_CODE       VARCHAR(255),
+    DEVICE_TYPE_CODE                VARCHAR(16),
+    TOTAL_TIME_SPENT_ON_INTRANET_HUB NUMBER(38,0),
+    RECIPIENT_CURRENT_CITY          VARCHAR(16777216),
+    RECIPIENT_CURRENT_COUNTRY       VARCHAR(16777216),
+    RECIPIENT_CURRENT_DEPARTMENT    VARCHAR(16777216),
+    RECIPIENT_CURRENT_LOCATION      VARCHAR(16777216),
+    RECIPIENT_CURRENT_EMAIL         VARCHAR(16777216),
+    INTERACTION_DATETIME            TIMESTAMP_NTZ,
+    RECIPIENT_TYPE_CODE             VARCHAR(255),
+    BLOCK_CODE                      VARCHAR(255),
+    BLOCK_TYPE_CODE                 VARCHAR(255),
+    CLICK_TYPE_CODE                 VARCHAR(255),
+    IP_ADDRESS                      VARCHAR(255),
+    LINK_CLICKED_PAGE_TITLE         VARCHAR(16777216),
+    LINK_CLICKED_URL                VARCHAR(16777216),
+    SESSION_ID                      VARCHAR(255),
+    RECIPIENT_CURRENT_TIMEZONE      VARCHAR(255),
+    USER_AGENT                      VARCHAR(16777216),
+    ACTIVE_FLAG                     BOOLEAN NOT NULL,
+    ACTIVE_DATE                     TIMESTAMP_NTZ,
+    CREATED_BY                      VARCHAR(255),
+    CREATED_DATETIME                TIMESTAMP_NTZ,
+    UPDATED_BY                      VARCHAR(255),
+    UPDATED_DATETIME                TIMESTAMP_NTZ,
+    HASH_VALUE                      VARCHAR(32) NOT NULL,
+    DBT_LOADED_AT                   TIMESTAMP_NTZ,
+    DBT_RUN_ID                      VARCHAR(50),
+    DBT_BATCH_ID                    VARCHAR(32),
+    DBT_SOURCE_MODEL                VARCHAR(100),
+    DBT_ENVIRONMENT                 VARCHAR(20)
+);
+
+CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER_CATEGORY (
+    ID                              NUMBER(38,0) NOT NULL,
+    DATA_SOURCE_CODE                VARCHAR(16),
+    TENANT_CODE                     VARCHAR(255) NOT NULL,
+    STAGING_ID                      NUMBER(38,0),
+    CODE                            VARCHAR(255) NOT NULL,
+    NAME                            VARCHAR(16777216),
+    CATEGORY_CREATED_DATETIME       TIMESTAMP_NTZ,
+    ACTIVE_FLAG                     BOOLEAN NOT NULL,
+    ACTIVE_DATE                     TIMESTAMP_NTZ,
+    INACTIVE_DATE                   TIMESTAMP_NTZ,
+    CREATED_BY                      VARCHAR(255),
+    CREATED_DATETIME                TIMESTAMP_NTZ,
+    UPDATED_BY                      VARCHAR(255),
+    UPDATED_DATETIME                TIMESTAMP_NTZ,
+    HASH_VALUE                      VARCHAR(32) NOT NULL,
+    DBT_LOADED_AT                   TIMESTAMP_NTZ,
+    DBT_RUN_ID                      VARCHAR(50),
+    DBT_BATCH_ID                    VARCHAR(32),
+    DBT_SOURCE_MODEL                VARCHAR(100),
+    DBT_ENVIRONMENT                 VARCHAR(20)
+);
+
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 6. UDL.NEWSLETTER_HIST — Must pre-exist for the publish procedure INSERT
 --    Column order matches wrk_newsletter contract + publish tracking columns.
 --    The dbt audit columns are also included here (publish_archive_setup.sql
 --    adds them via ALTER IF NOT EXISTS as a safety net).
@@ -189,7 +312,7 @@ CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER_HIST (
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════
--- 6. SAMPLE DATA — Newsletter events
+-- 7. SAMPLE DATA — Newsletter events
 --    5 records: 4 unique newsletters + 1 duplicate (older version, same
 --    code+tenant) to test hash-based deduplication.
 -- ═══════════════════════════════════════════════════════════════════════════════
@@ -375,7 +498,7 @@ SELECT
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════
--- 7. SAMPLE DATA — Newsletter interaction events
+-- 8. SAMPLE DATA — Newsletter interaction events
 --    4 records covering different interaction types and delivery channels.
 -- ═══════════════════════════════════════════════════════════════════════════════
 
@@ -491,7 +614,7 @@ SELECT
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════
--- 8. SAMPLE DATA — Newsletter category events
+-- 9. SAMPLE DATA — Newsletter category events
 --    3 records covering different tenants.
 -- ═══════════════════════════════════════════════════════════════════════════════
 
@@ -542,8 +665,8 @@ SELECT
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════
--- 9. EXTERNAL ACCESS INTEGRATION — Required for dbt deps (dbt_utils, dbt_expectations)
---    Skip this section if your account already has an integration for dbt Hub / GitHub.
+-- 10. EXTERNAL ACCESS INTEGRATION — Required for dbt deps (dbt_utils, dbt_expectations)
+--     Skip this section if your account already has an integration for dbt Hub / GitHub.
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 CREATE NETWORK RULE IF NOT EXISTS COMMON_TENANT_DEV.PUBLIC.DBT_HUB_NETWORK_RULE
@@ -576,10 +699,11 @@ FROM COMMON_TENANT_DEV.INFORMATION_SCHEMA.TABLES
 WHERE TABLE_SCHEMA = 'SHARED_SERVICES_STAGING'
 ORDER BY TABLE_NAME;
 
--- Check UDL.NEWSLETTER_HIST
+-- Check UDL tables (3 fact tables + NEWSLETTER_HIST — all empty until first publish)
 SELECT TABLE_SCHEMA, TABLE_NAME, ROW_COUNT
 FROM COMMON_TENANT_DEV.INFORMATION_SCHEMA.TABLES
-WHERE TABLE_SCHEMA = 'UDL' AND TABLE_NAME = 'NEWSLETTER_HIST';
+WHERE TABLE_SCHEMA = 'UDL'
+ORDER BY TABLE_NAME;
 
 -- Check sample data counts
 SELECT 'NEWSLETTER' AS entity, COUNT(*) AS row_count FROM SHARED_SERVICES_STAGING.VW_ENL_NEWSLETTER

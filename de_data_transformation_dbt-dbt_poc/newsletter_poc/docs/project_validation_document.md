@@ -21,7 +21,7 @@ This project replaces the existing Scala/Snowpark newsletter ETL pipeline with a
 | Reference seeds | 6 (CSV-managed lookup tables) |
 | Custom macros | 14 |
 | Automated tests | 51 (schema, uniqueness, accepted values, contracts) |
-| Stored procedures | 7 (publish, archive, retry, artifact logging) |
+| Stored procedures | 8 (merge helper, publish, archive, retry, artifact logging) |
 | Monitoring views | 28 |
 | Dashboard queries | 30+ across 9 categories |
 
@@ -96,12 +96,15 @@ This project replaces the existing Scala/Snowpark newsletter ETL pipeline with a
              │
              ▼
   ┌─────────────────────────────────────────────────────────────────────────────┐
-  │  PUBLISH (UDL schema)               Atomic clone+swap via stored procedure  │
-  │  UDL.NEWSLETTER              ← CLONE DBT_UDL.WRK_NEWSLETTER                │
-  │  UDL.NEWSLETTER_INTERACTION  ← CLONE DBT_UDL.WRK_NEWSLETTER_INTERACTION    │
-  │  UDL.NEWSLETTER_CATEGORY     ← CLONE DBT_UDL.WRK_NEWSLETTER_CATEGORY       │
+  │  PUBLISH (UDL schema)           Hybrid Merge+Clone via stored procedure     │
+  │  UDL.NEWSLETTER              ← MERGE from DBT_UDL.WRK_NEWSLETTER           │
+  │  UDL.NEWSLETTER_INTERACTION  ← MERGE from DBT_UDL.WRK_NEWSLETTER_INTERACTION│
+  │  UDL.NEWSLETTER_CATEGORY     ← MERGE from DBT_UDL.WRK_NEWSLETTER_CATEGORY  │
   │  UDL.NEWSLETTER_SCD2         ← CLONE DBT_UDL.SNAP_NEWSLETTER               │
   │  UDL.NEWSLETTER_HIST         ← INSERT from UDL.NEWSLETTER (append)         │
+  │                                                                             │
+  │  MERGE: only changed rows written — preserves Snowflake Time Travel         │
+  │  CLONE: instant for SCD2 (table IS the history — Time Travel redundant)     │
   ├─────────────────────────────────────────────────────────────────────────────┤
   │  ARCHIVE (SHARED_SERVICES_STAGING)          Post-publish raw data archival  │
   │  VW_ENL_NEWSLETTER → ENL_NEWSLETTER_ARCHIVE (INSERT + DELETE)              │
@@ -115,9 +118,9 @@ This project replaces the existing Scala/Snowpark newsletter ETL pipeline with a
 | Schema | Purpose | Objects |
 |--------|---------|---------|
 | `SHARED_SERVICES_STAGING` | Raw Kafka data (input) | 3 source tables + 3 archive tables |
-| `UDL` | Staging tables, seeds, user-facing published tables | 5 staging tables, 6 seed tables, 4 published tables + NEWSLETTER_HIST |
+| `UDL` | Staging tables, seeds, user-facing published tables | 5 staging tables, 6 seed tables, 3 MERGE-published fact tables + NEWSLETTER_SCD2 (cloned) + NEWSLETTER_HIST |
 | `DBT_UDL` | dbt work tables and snapshots | 3 wrk_* tables, 1 snapshot, 1 sentinel view |
-| `UDL_BATCH_PROCESS` | Stored procedures | 7 procedures (publish, archive, retry, artifact logging) |
+| `UDL_BATCH_PROCESS` | Stored procedures | 8 procedures (merge helper, publish, archive, retry, artifact logging) |
 | `DBT_EXECUTION_RUN_STATS` | Audit and observability | Run logs, model logs, test results, build results, monitoring views |
 
 ---
@@ -133,9 +136,9 @@ This project replaces the existing Scala/Snowpark newsletter ETL pipeline with a
 | `SHARED_SERVICES_STAGING.VW_ENL_NEWSLETTER_CATEGORY` | `{{ source('shared_services_staging', 'VW_ENL_NEWSLETTER_CATEGORY') }}` | Same table, read via `source()` |
 | `UDL_BATCH_PROCESS.SHARED_STG_*` | `UDL.STG_NEWSLETTER`, `STG_NEWSLETTER_INTERACTION`, etc. | Staging layer (parsing + hashing) |
 | `UDL_BATCH_PROCESS.WRK_*` | `DBT_UDL.WRK_NEWSLETTER`, `WRK_NEWSLETTER_INTERACTION`, `WRK_NEWSLETTER_CATEGORY` | Work/mart tables (dedup + enrich) |
-| `UDL.NEWSLETTER` | `UDL.NEWSLETTER` (via clone+swap from `DBT_UDL.WRK_NEWSLETTER`) | User-facing published table |
-| `UDL.NEWSLETTER_INTERACTION` | `UDL.NEWSLETTER_INTERACTION` (via clone+swap) | User-facing published table |
-| `UDL.NEWSLETTER_CATEGORY` | `UDL.NEWSLETTER_CATEGORY` (via clone+swap) | User-facing published table |
+| `UDL.NEWSLETTER` | `UDL.NEWSLETTER` (via MERGE from `DBT_UDL.WRK_NEWSLETTER`) | User-facing published table (Time Travel preserved) |
+| `UDL.NEWSLETTER_INTERACTION` | `UDL.NEWSLETTER_INTERACTION` (via MERGE) | User-facing published table (Time Travel preserved) |
+| `UDL.NEWSLETTER_CATEGORY` | `UDL.NEWSLETTER_CATEGORY` (via MERGE) | User-facing published table (Time Travel preserved) |
 | `UDL.NEWSLETTER_HIST` | `UDL.NEWSLETTER_HIST` (appended during publish) | Historical snapshots of newsletter state |
 | N/A (new) | `UDL.NEWSLETTER_SCD2` (via clone of `SNAP_NEWSLETTER`) | Full SCD-2 history with dbt_valid_from/to |
 
@@ -147,7 +150,7 @@ This project replaces the existing Scala/Snowpark newsletter ETL pipeline with a
 | Hash-based deduplication | `LEFT JOIN ... ON hash_value` in incremental mode | Same MD5 hash logic over business columns |
 | ROW_NUMBER latest version | `ROW_NUMBER() OVER (PARTITION BY tenant_code, code ORDER BY kafka_timestamp DESC)` | `int_newsletter_joined` ephemeral model |
 | Reference table lookups | `LEFT JOIN {{ ref('ref_newsletter_status') }}` | 6 dbt seed tables |
-| Publish to UDL (DELETE+INSERT) | Clone+Swap (`CREATE OR REPLACE TABLE ... CLONE`) | Atomic, zero-copy, within single transaction |
+| Publish to UDL (DELETE+INSERT) | Hybrid Merge+Clone | MERGE for fact tables (preserves Time Travel, touches only changed rows), CLONE for SCD2 |
 | Archive raw data | `PRC_DBT_ARCHIVE_RAW_DATA` procedure | INSERT into archive + DELETE from raw |
 | SCD-2 history | `snap_newsletter` (dbt snapshot, check strategy) | Tracks `hash_value` + `actual_delivery_system_type` |
 
@@ -185,18 +188,26 @@ This project replaces the existing Scala/Snowpark newsletter ETL pipeline with a
 
 **Columns hashed (newsletter):** name, subject, sender_address, channels, recipients, status, category, template, theme, creator_id, modifier_id, timestamps, is_deleted, is_archived, reply_to_address, and more.
 
-### 4.4 Atomic Publish (Clone+Swap)
+### 4.4 Atomic Publish (Hybrid Merge+Clone)
 
 **What:** All three user-facing UDL tables + SCD-2 + NEWSLETTER_HIST are updated atomically in a single transaction.
 
 **How it works:**
 1. `pipeline_complete` sentinel model depends on all 3 wrk_* models + snap_newsletter
 2. Its post-hook calls `PRC_DBT_PUBLISH_TO_TARGET` stored procedure
-3. Procedure clones work tables → UDL tables using `CREATE OR REPLACE TABLE ... CLONE ... COPY GRANTS`
-4. Appends to `NEWSLETTER_HIST` from the freshly cloned `UDL.NEWSLETTER`
-5. All within `BEGIN TRANSACTION ... COMMIT`
+3. **MERGE** for fact tables — dynamic MERGE built from `INFORMATION_SCHEMA` column metadata:
+   - `WHEN MATCHED AND src.HASH_VALUE != tgt.HASH_VALUE THEN UPDATE` — only changed rows are written
+   - `WHEN NOT MATCHED THEN INSERT` — new rows are added
+   - `WHEN NOT MATCHED BY SOURCE THEN DELETE` — removed rows are purged
+4. **CLONE** for `NEWSLETTER_SCD2` — instant metadata copy (SCD2 is inherently historical)
+5. **INSERT** to `NEWSLETTER_HIST` — appends current state with `published_by_run_id` and `published_at`
+6. All within `BEGIN TRANSACTION ... COMMIT`
 
-**Why clone+swap:** Zero-copy cloning is instant regardless of data size. All tables become visible simultaneously — prevents dashboards from seeing partial data.
+**Why hybrid Merge+Clone:**
+- **MERGE preserves Snowflake Time Travel** on UDL fact tables — consumers can use `AT(TIMESTAMP => ...)` for point-in-time queries, disaster recovery, and audit
+- **MERGE is performant at scale** — at 1B+ rows, only changed rows are written (hash comparison), avoiding full-table rewrites
+- **CLONE for SCD2 is optimal** — the table itself tracks complete history via `dbt_valid_from`/`dbt_valid_to`, making Time Travel redundant on this specific table
+- **Dynamic column resolution** via `PRC_MERGE_PUBLISH` helper — adapts automatically to schema changes without hardcoded column lists
 
 ### 4.5 Raw Data Archival
 
@@ -447,9 +458,9 @@ EXECUTE DBT PROJECT ... ARGS = 'build --target dev --vars ''{enable_publish: fal
 
 | Step | Script | Creates |
 |------|--------|---------|
-| 1 | `account_bootstrap.sql` | Database, 5 schemas, 6 source/archive tables, NEWSLETTER_HIST, sample data, access integration |
+| 1 | `account_bootstrap.sql` | Database, 5 schemas, 6 source/archive tables, 3 UDL fact tables, NEWSLETTER_HIST, sample data, access integration |
 | 2 | `audit_setup.sql` | `DBT_RUN_LOG`, `DBT_MODEL_LOG`, 4 summary views |
-| 3 | `publish_archive_setup.sql` | Publish + archive procedures, NEWSLETTER_HIST audit columns |
+| 3 | `publish_archive_setup.sql` | Merge helper + publish + archive procedures, NEWSLETTER_HIST audit columns |
 | 4 | `retry_setup.sql` | Model manifest, retry views, retry procedures |
 | 5 | `test_logging_setup.sql` | Artifact stage, test/build logging tables, artifact procedures, monitoring views |
 | 6 | `dbt deps` | Install dbt_utils + dbt_expectations packages |
@@ -542,7 +553,8 @@ Dashboard Section H provides 7 reconciliation queries:
 | Schema validation | Manual | `contract: enforced: true` |
 | Schema drift protection | None | `on_schema_change: fail` |
 | Automated testing | None | 51 tests (not_null, unique, accepted_values, composite uniqueness) |
-| Publish to UDL | DELETE + INSERT | Clone+Swap (atomic, zero-copy) |
+| Publish to UDL | DELETE + INSERT | Hybrid Merge+Clone (MERGE fact tables, CLONE SCD2) |
+| Time Travel on UDL | Lost on each publish cycle | Preserved on fact tables (MERGE is DML, not DDL) |
 | Audit trail | BATCH_RUN / PROCESS_RUN | DBT_RUN_LOG / DBT_MODEL_LOG |
 | Run retry | Manual re-run | Smart retry (PRC_DBT_SMART_RETRY) |
 | Monitoring | Manual queries | 28 views + 30+ dashboard queries |
@@ -582,6 +594,8 @@ For customer sign-off, validate the following:
 
 ### Publish & Archive
 - [ ] UDL tables match DBT_UDL work tables after publish (row counts + data content)
+- [ ] MERGE correctly inserts new rows, updates changed rows, deletes removed rows
+- [ ] Time Travel works on UDL fact tables after publish (`SELECT * FROM UDL.NEWSLETTER AT(OFFSET => -60)`)
 - [ ] NEWSLETTER_HIST accumulates rows with each build
 - [ ] NEWSLETTER_SCD2 reflects complete snapshot history
 - [ ] Archive tables receive records after publish

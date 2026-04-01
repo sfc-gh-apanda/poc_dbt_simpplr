@@ -8,7 +8,7 @@ models:
     description: >
       Newsletter work table — the "latest and greatest" snapshot of each newsletter.
       Incrementally merged on (tenant_code, code). Enriched with reference table lookups
-      for status and recipient type. Published as UDL.NEWSLETTER via clone+swap.
+      for status and recipient type. Published as UDL.NEWSLETTER via MERGE (preserves Time Travel).
     config:
       contract:
         enforced: true
@@ -149,7 +149,7 @@ models:
       Newsletter interaction work table. One row per interaction event (latest version).
       Incrementally merged on (tenant_code, code). Enriched with 5 reference table lookups
       (interaction type, delivery system, recipient type, click type, block type).
-      Published as UDL.NEWSLETTER_INTERACTION via clone+swap.
+      Published as UDL.NEWSLETTER_INTERACTION via MERGE (preserves Time Travel).
     config:
       contract:
         enforced: true
@@ -278,7 +278,7 @@ models:
     description: >
       Newsletter category work table. One row per category (latest version).
       Incrementally merged on (tenant_code, code). Simple entity with
-      code, name, and creation timestamp. Published as UDL.NEWSLETTER_CATEGORY via clone+swap.
+      code, name, and creation timestamp. Published as UDL.NEWSLETTER_CATEGORY via MERGE (preserves Time Travel).
     config:
       contract:
         enforced: true
@@ -362,7 +362,7 @@ models:
     description: >
       Sentinel model that depends on all 3 work models via ref(). Only runs
       after all wrk_* models complete successfully. Post-hooks perform:
-      1. Atomic clone+swap publish from DBT_UDL → UDL (all entities + NEWSLETTER_HIST + NEWSLETTER_SCD2)
+      1. Atomic hybrid publish from DBT_UDL → UDL (MERGE fact tables + CLONE SCD2 + INSERT NEWSLETTER_HIST)
       2. Archive processed raw records from ENL_* → ENL_*_ARCHIVE (if enabled)
     columns:
       - name: model

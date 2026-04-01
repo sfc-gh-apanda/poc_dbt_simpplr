@@ -81,6 +81,20 @@ The pipeline is organized into **five distinct layers**, each with a clear purpo
   │  snap_newsletter  ← wrk_newsletter                                 │
   │  Tracks full version history using check strategy on hash_value     │
   │  Maintains dbt_valid_from / dbt_valid_to for historical analysis    │
+  └───────────────┬─────────────────────────────────────────────────────┘
+                  │
+                  ▼
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  PUBLISH (UDL)             Hybrid Merge+Clone via stored procedure  │
+  │                                                                     │
+  │  UDL.NEWSLETTER              ← MERGE from DBT_UDL.WRK_NEWSLETTER   │
+  │  UDL.NEWSLETTER_INTERACTION  ← MERGE from WRK_NEWSLETTER_INTERACTION│
+  │  UDL.NEWSLETTER_CATEGORY     ← MERGE from WRK_NEWSLETTER_CATEGORY  │
+  │  UDL.NEWSLETTER_SCD2         ← CLONE from SNAP_NEWSLETTER          │
+  │  UDL.NEWSLETTER_HIST         ← INSERT (append from UDL.NEWSLETTER) │
+  │                                                                     │
+  │  MERGE: only changed rows are written — preserves Time Travel       │
+  │  CLONE: instant metadata copy for SCD2 (history is built-in)        │
   └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -153,7 +167,7 @@ The pipeline is organized into **five distinct layers**, each with a clear purpo
 |-------|----------|-----------------|---------|
 | `snap_newsletter` | Check | `hash_value`, `actual_delivery_system_type` | Maintains full SCD Type 2 history. When either tracked column changes, the current record is closed (`dbt_valid_to` set) and a new version is inserted. Supports `invalidate_hard_deletes` for tracking deletions. |
 
-**Design rationale:** Only `wrk_newsletter` requires historical tracking (mirroring the existing `NEWSLETTER_HIST` table). The **check strategy** on the hash column efficiently captures any business-column change in a single comparison, while `actual_delivery_system_type` is tracked separately since it can change independently via post-hook updates. The snapshot is published as `UDL.NEWSLETTER_SCD2` via clone+swap alongside the other tables.
+**Design rationale:** Only `wrk_newsletter` requires historical tracking (mirroring the existing `NEWSLETTER_HIST` table). The **check strategy** on the hash column efficiently captures any business-column change in a single comparison, while `actual_delivery_system_type` is tracked separately since it can change independently via post-hook updates. The snapshot is published as `UDL.NEWSLETTER_SCD2` via **clone** (Time Travel is redundant on SCD2 since the table itself is the history). The three fact tables are published via **MERGE** to preserve Snowflake Time Travel on the UDL targets.
 
 ---
 

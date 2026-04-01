@@ -2,9 +2,16 @@
 -- PUBLISH + ARCHIVE — Stored Procedures Setup
 -- Run ONCE after audit_setup.sql
 --
+-- PRC_MERGE_PUBLISH:
+--   Dynamic MERGE helper — builds MERGE SQL from INFORMATION_SCHEMA metadata.
+--   Only touches changed rows (hash-based), preserves Time Travel on UDL tables.
+--
 -- PRC_DBT_PUBLISH_TO_TARGET:
---   Clone+Swap from DBT_UDL (dbt work tables) → UDL (user-facing) atomically.
---   All 3 entities + NEWSLETTER_SCD2 + NEWSLETTER_HIST in a single transaction.
+--   Hybrid Merge+Clone from DBT_UDL → UDL:
+--     MERGE for 3 fact tables (preserves Time Travel)
+--     CLONE for SCD2 (history table — Time Travel is redundant)
+--     INSERT for NEWSLETTER_HIST (append-only accumulator)
+--   All within a single transaction for atomicity.
 --
 -- PRC_DBT_ARCHIVE_RAW_DATA:
 --   Archive processed raw records and purge from source tables.
@@ -14,8 +21,65 @@ USE ROLE ACCOUNTADMIN;
 USE DATABASE COMMON_TENANT_DEV;
 
 -- ═══════════════════════════════════════════════════════════════════════════════
--- 1. PRC_DBT_PUBLISH_TO_TARGET
---    Clone+Swap: DBT_UDL.WRK_* → UDL.* (zero-copy, atomic)
+-- 1. PRC_MERGE_PUBLISH
+--    Dynamic MERGE helper: builds column lists from INFORMATION_SCHEMA.
+--    Designed to be called within the caller's transaction — no BEGIN/COMMIT.
+--    Merge key: (TENANT_CODE, CODE).  Skip condition: HASH_VALUE unchanged.
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+CREATE OR REPLACE PROCEDURE UDL_BATCH_PROCESS.PRC_MERGE_PUBLISH(
+    P_SOURCE_SCHEMA VARCHAR,
+    P_SOURCE_TABLE  VARCHAR,
+    P_TARGET_SCHEMA VARCHAR,
+    P_TARGET_TABLE  VARCHAR
+)
+RETURNS VARCHAR
+LANGUAGE SQL
+EXECUTE AS CALLER
+AS
+$$
+DECLARE
+    v_all_cols   VARCHAR;
+    v_src_cols   VARCHAR;
+    v_update_set VARCHAR;
+    v_merge_sql  VARCHAR;
+BEGIN
+
+    SELECT LISTAGG(COLUMN_NAME, ', ') WITHIN GROUP (ORDER BY ORDINAL_POSITION)
+    INTO v_all_cols
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = :P_SOURCE_SCHEMA AND TABLE_NAME = :P_SOURCE_TABLE;
+
+    SELECT LISTAGG('src.' || COLUMN_NAME, ', ') WITHIN GROUP (ORDER BY ORDINAL_POSITION)
+    INTO v_src_cols
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = :P_SOURCE_SCHEMA AND TABLE_NAME = :P_SOURCE_TABLE;
+
+    SELECT LISTAGG('tgt.' || COLUMN_NAME || ' = src.' || COLUMN_NAME, ', ')
+           WITHIN GROUP (ORDER BY ORDINAL_POSITION)
+    INTO v_update_set
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = :P_SOURCE_SCHEMA AND TABLE_NAME = :P_SOURCE_TABLE
+      AND COLUMN_NAME NOT IN ('TENANT_CODE', 'CODE');
+
+    v_merge_sql :=
+        'MERGE INTO ' || :P_TARGET_SCHEMA || '.' || :P_TARGET_TABLE || ' tgt ' ||
+        'USING ' || :P_SOURCE_SCHEMA || '.' || :P_SOURCE_TABLE || ' src ' ||
+        'ON tgt.TENANT_CODE = src.TENANT_CODE AND tgt.CODE = src.CODE ' ||
+        'WHEN MATCHED AND src.HASH_VALUE != tgt.HASH_VALUE THEN UPDATE SET ' || :v_update_set || ' ' ||
+        'WHEN NOT MATCHED THEN INSERT (' || :v_all_cols || ') VALUES (' || :v_src_cols || ') ' ||
+        'WHEN NOT MATCHED BY SOURCE THEN DELETE';
+
+    EXECUTE IMMEDIATE :v_merge_sql;
+
+    RETURN 'SUCCESS';
+END;
+$$;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 2. PRC_DBT_PUBLISH_TO_TARGET
+--    Hybrid publish: MERGE fact tables + CLONE SCD2 + INSERT history
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 CREATE OR REPLACE PROCEDURE UDL_BATCH_PROCESS.PRC_DBT_PUBLISH_TO_TARGET(
@@ -38,27 +102,23 @@ BEGIN
 
     BEGIN TRANSACTION;
 
-    -- Newsletter: clone work table → user-facing table
-    CREATE OR REPLACE TABLE UDL.NEWSLETTER
-        CLONE DBT_UDL.WRK_NEWSLETTER
-        COPY GRANTS;
+    -- ─── MERGE: 3 fact tables (preserves Time Travel on UDL targets) ───
+    CALL UDL_BATCH_PROCESS.PRC_MERGE_PUBLISH(
+        'DBT_UDL', 'WRK_NEWSLETTER', 'UDL', 'NEWSLETTER'
+    );
+    CALL UDL_BATCH_PROCESS.PRC_MERGE_PUBLISH(
+        'DBT_UDL', 'WRK_NEWSLETTER_INTERACTION', 'UDL', 'NEWSLETTER_INTERACTION'
+    );
+    CALL UDL_BATCH_PROCESS.PRC_MERGE_PUBLISH(
+        'DBT_UDL', 'WRK_NEWSLETTER_CATEGORY', 'UDL', 'NEWSLETTER_CATEGORY'
+    );
 
-    -- Newsletter Interaction: clone work table → user-facing table
-    CREATE OR REPLACE TABLE UDL.NEWSLETTER_INTERACTION
-        CLONE DBT_UDL.WRK_NEWSLETTER_INTERACTION
-        COPY GRANTS;
-
-    -- Newsletter Category: clone work table → user-facing table
-    CREATE OR REPLACE TABLE UDL.NEWSLETTER_CATEGORY
-        CLONE DBT_UDL.WRK_NEWSLETTER_CATEGORY
-        COPY GRANTS;
-
-    -- Newsletter SCD2: clone snapshot → user-facing SCD2 history table
+    -- ─── CLONE: SCD2 (Time Travel redundant — table IS the history) ───
     CREATE OR REPLACE TABLE UDL.NEWSLETTER_SCD2
         CLONE DBT_UDL.SNAP_NEWSLETTER
         COPY GRANTS;
 
-    -- Newsletter History: append current state to history table
+    -- ─── INSERT: append current newsletter state to history table ───
     INSERT INTO UDL.NEWSLETTER_HIST
     SELECT
         n.*,
@@ -82,7 +142,7 @@ BEGIN
         'publish_to_target',
         'UDL',
         CURRENT_DATABASE(),
-        'clone_swap',
+        'merge_clone',
         :P_RUN_ID || '_publish',
         'SUCCESS',
         CURRENT_TIMESTAMP(),
@@ -97,6 +157,7 @@ BEGIN
     RETURN OBJECT_CONSTRUCT(
         'status',      'success',
         'run_id',      P_RUN_ID,
+        'strategy',    'hybrid_merge_clone',
         'newsletter',  v_nl_count,
         'interaction', v_nli_count,
         'category',    v_nlc_count
