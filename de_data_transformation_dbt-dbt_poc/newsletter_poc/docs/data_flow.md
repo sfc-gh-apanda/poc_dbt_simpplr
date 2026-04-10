@@ -30,8 +30,9 @@ The pipeline is organized into **five distinct layers**, each with a clear purpo
   ┌─────────────────────────────────────────────────────────────────────┐
   │  STAGING  (UDL)                                    materialized: table │
   │                                                                     │
-  │  Narrow delta: WHERE created_datetime >= start AND <= end           │
-  │  (start/end from Airflow via batch_run_id watermark)               │
+  │  Self-pruning: WHERE created_datetime <= end_time                   │
+  │  (raw tables are pruned by archive; no start_time needed)          │
+  │  + REPROCESS_REQUEST → archive pull for customer-requested IDs     │
   │                                                                     │
   │  stg_newsletter             Parse newsletter JSON, extract          │
   │  stg_newsletter_recipient   LATERAL FLATTEN recipients, LISTAGG     │
@@ -120,7 +121,9 @@ The pipeline is organized into **five distinct layers**, each with a clear purpo
 
 **Design rationale:** Materialized as **tables** for predictable performance and consistent row counts during downstream processing. Each staging model has a single responsibility: parse one source table. Hash computation here enables efficient deduplication downstream. Full-load mode unions raw tables with archive tables for complete history.
 
-**Narrow delta:** Staging reads only the time window between `data_process_start_time` and `data_process_end_time` — matching the Scala pipeline's `dataProcessStartTime`/`dataProcessEndTime` pattern. When called from Airflow, these are passed via `--vars` from the BATCH_RUN table. Defaults (`2000-01-01` / `9999-12-31`) allow standalone dbt builds without Airflow.
+**Self-pruning raw tables:** Staging reads everything in raw up to `data_process_end_time`. There is no `start_time` filter because the raw tables are self-pruning — the archive procedure removes processed records after each run. This means whatever remains in raw is, by definition, unprocessed data that should be picked up.
+
+**Customer-driven reprocessing:** If records have been archived and need reprocessing, customers/support insert rows into `UDL_BATCH_PROCESS.REPROCESS_REQUEST` with the target `ENTITY_TYPE`, `RECORD_CODE`, and `TENANT_CODE`. The staging models automatically JOIN the archive tables with pending reprocess requests and UNION the results with raw data. After publish, requests are marked `COMPLETED` and archived to `REPROCESS_REQUEST_HIST`.
 
 ---
 
@@ -253,13 +256,13 @@ Kafka Messages (VARIANT)
 
 ## Airflow Integration & End-to-End Traceability
 
-When called from Airflow, the dbt pipeline receives three key variables from the BATCH_RUN table:
+When called from Airflow, the dbt pipeline receives key variables from the BATCH_RUN table:
 
 ```
 Airflow DAG run
   └→ task_initiate_process
-       └→ prc_udl_batch_handler("initiate") → batch_run_id, start_time, end_time
-  └→ EXECUTE DBT PROJECT ... --vars '{"batch_run_id": 101, "data_process_start_time": "...", "data_process_end_time": "..."}'
+       └→ prc_udl_batch_handler("initiate") → batch_run_id, end_time
+  └→ EXECUTE DBT PROJECT ... --vars '{"batch_run_id": 101, "data_process_end_time": "..."}'
   └→ task_complete_process
        └→ prc_udl_batch_handler("complete", batch_run_id)
 ```
@@ -275,3 +278,47 @@ Airflow DAG run
 ### Why `batch_run_id` is immune to retry splits
 
 Even if a smart retry creates a new dbt `invocation_id`, the `batch_run_id` remains the same because it originates from Airflow's `task_initiate_process`, which only runs once per DAG execution. This provides the same end-to-end traceability as the Scala pipeline's `CREATED_BATCH_RUN_ID`.
+
+---
+
+## Customer-Driven Reprocessing
+
+### Flow
+
+```
+Customer/Support inserts into REPROCESS_REQUEST
+    ↓
+Next dbt build:
+    ├── raw_data CTE: reads raw view (up to end_time)
+    ├── reprocess_data CTE: JOINs archive with REPROCESS_REQUEST (PENDING)
+    └── UNION ALL → staging → hash dedup → wrk → publish
+    ↓
+PRC_DBT_PUBLISH_TO_TARGET:
+    ├── Publishes delta normally
+    ├── Marks REPROCESS_REQUEST → COMPLETED
+    └── Archives to REPROCESS_REQUEST_HIST
+```
+
+### Tables
+
+| Table | Schema | Purpose |
+|-------|--------|---------|
+| `REPROCESS_REQUEST` | `UDL_BATCH_PROCESS` | Active queue — PENDING requests picked up by staging |
+| `REPROCESS_REQUEST_HIST` | `UDL_BATCH_PROCESS` | Completed requests for audit trail |
+
+### Key Columns
+
+| Column | Description |
+|--------|-------------|
+| `ENTITY_TYPE` | `NEWSLETTER`, `NEWSLETTER_INTERACTION`, or `NEWSLETTER_CATEGORY` |
+| `RECORD_CODE` | The `CODE` of the record to reprocess |
+| `TENANT_CODE` | The tenant identifier |
+| `STATUS` | `PENDING` → `COMPLETED` (lifecycle managed by publish procedure) |
+| `PROCESSED_BY_RUN_ID` | dbt `invocation_id` that processed the request |
+| `BATCH_RUN_ID` | Airflow batch ID for traceability |
+
+### Safety
+
+- If the record is **already in raw** (not archived), the reprocess archive CTE returns nothing for it; the raw CTE picks it up normally. The request is still marked `COMPLETED`.
+- If the record's source data is **unchanged**, the hash dedup filters it out downstream — no redundant versions are created in HIST.
+- If the source data **was corrected**, the hash will differ, and the record flows through as a normal delta update (new active version in HIST, old version deactivated).

@@ -8,8 +8,9 @@
 --   3. Archive tables (3, same structure as raw)
 --   4. UDL target tables (NEWSLETTER, NEWSLETTER_INTERACTION, NEWSLETTER_CATEGORY)
 --   5. UDL.NEWSLETTER_HIST (master SCD-2 accumulator with active_flag tracking)
---   6. Sample data (newsletters, interactions, categories)
---   7. External access integration for dbt packages (dbt_utils, dbt_expectations)
+--   6. REPROCESS_REQUEST + _HIST (customer-driven reprocessing queue)
+--   7. Sample data (newsletters, interactions, categories)
+--   8. External access integration for dbt packages (dbt_utils, dbt_expectations)
 --
 -- Prerequisites:
 --   - ACCOUNTADMIN role (or equivalent with CREATE DATABASE / INTEGRATION)
@@ -329,6 +330,43 @@ CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER_HIST (
 );
 
 ALTER TABLE UDL.NEWSLETTER_HIST CLUSTER BY (TENANT_CODE, CODE, ACTIVE_FLAG);
+
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 6b. REPROCESS_REQUEST — Customer-driven reprocessing queue
+--     Records queued here are fetched from archive tables and merged into the
+--     staging pipeline alongside raw view data.
+--     Status lifecycle: PENDING → COMPLETED (after publish succeeds)
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS UDL_BATCH_PROCESS.REPROCESS_REQUEST (
+    REQUEST_ID              NUMBER AUTOINCREMENT,
+    ENTITY_TYPE             VARCHAR(50)    NOT NULL,
+    RECORD_CODE             VARCHAR(255)   NOT NULL,
+    TENANT_CODE             VARCHAR(255)   NOT NULL,
+    REQUESTED_BY            VARCHAR(100),
+    REQUESTED_AT            TIMESTAMP_NTZ  DEFAULT CURRENT_TIMESTAMP(),
+    REASON                  VARCHAR(500),
+    STATUS                  VARCHAR(20)    DEFAULT 'PENDING',
+    PROCESSED_BY_RUN_ID     VARCHAR(50),
+    PROCESSED_AT            TIMESTAMP_NTZ,
+    BATCH_RUN_ID            INTEGER,
+    CONSTRAINT uq_reprocess UNIQUE (ENTITY_TYPE, RECORD_CODE, TENANT_CODE, STATUS)
+);
+
+CREATE TABLE IF NOT EXISTS UDL_BATCH_PROCESS.REPROCESS_REQUEST_HIST (
+    REQUEST_ID              NUMBER,
+    ENTITY_TYPE             VARCHAR(50),
+    RECORD_CODE             VARCHAR(255),
+    TENANT_CODE             VARCHAR(255),
+    REQUESTED_BY            VARCHAR(100),
+    REQUESTED_AT            TIMESTAMP_NTZ,
+    REASON                  VARCHAR(500),
+    STATUS                  VARCHAR(20),
+    PROCESSED_BY_RUN_ID     VARCHAR(50),
+    PROCESSED_AT            TIMESTAMP_NTZ,
+    BATCH_RUN_ID            INTEGER
+);
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════

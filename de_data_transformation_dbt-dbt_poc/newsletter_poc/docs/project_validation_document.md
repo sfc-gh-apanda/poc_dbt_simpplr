@@ -48,7 +48,7 @@ This project replaces the existing Scala/Snowpark newsletter ETL pipeline with a
              ▼                       ▼                       ▼
   ┌─────────────────────────────────────────────────────────────────────────────┐
   │  STAGING  (UDL schema)                                 materialized: table  │
-  │  Narrow delta: WHERE created_datetime BETWEEN start AND end (from Airflow)  │
+  │  Self-pruning: WHERE created_datetime <= end_time + REPROCESS_REQUEST pull  │
   │  stg_newsletter              Parse 25+ fields from VARIANT JSON             │
   │  stg_newsletter_recipient    LATERAL FLATTEN recipients, LISTAGG            │
   │  stg_newsletter_interaction  Parse interactions, classify device type        │
@@ -419,8 +419,8 @@ Uses `SYSTEM$LOCATE_DBT_ARTIFACTS()` to capture `manifest.json` and `run_results
 | `is_full_load` | `false` | When `true`, staging models UNION raw + archive tables for complete rebuild |
 | `entity_specific_full_load` | `'none'` | Set to `'newsletter'`, `'interaction'`, or `'category'` for per-entity full load |
 | `batch_run_id` | `0` | Airflow batch run ID — passed from BATCH_RUN table for end-to-end traceability |
-| `data_process_start_time` | `'2000-01-01 00:00:00'` | Narrow delta lower bound — from Airflow's `dataProcessStartTime` |
-| `data_process_end_time` | `'9999-12-31 23:59:59'` | Narrow delta upper bound — from Airflow's `dataProcessEndTime` |
+| `data_process_start_time` | `'2000-01-01 00:00:00'` | Retained for backward compatibility — staging no longer filters on it |
+| `data_process_end_time` | `'9999-12-31 23:59:59'` | Batch end boundary — staging reads raw up to this timestamp |
 | `enable_publish` | `true` | Toggle HIST-as-master publish to UDL |
 | `enable_archive` | `true` | Toggle raw data archival after publish |
 | `enable_audit_logging` | `true` | Toggle run/model logging to audit tables |
@@ -535,7 +535,7 @@ Dashboard Section H provides 7 reconciliation queries:
 |---------|---------------|--------------|
 | Language | Scala/Snowpark | SQL + Jinja |
 | Execution | Airflow orchestrated | Snowflake Native dbt (called from Airflow) |
-| Watermark / Delta | `dataProcessStartTime` → `dataProcessEndTime` from BATCH_RUN | Same: `data_process_start_time` → `data_process_end_time` passed via `--vars` from Airflow |
+| Watermark / Delta | `dataProcessStartTime` → `dataProcessEndTime` from BATCH_RUN | Self-pruning raw: `data_process_end_time` only (archive removes processed records) + REPROCESS_REQUEST for customer-driven re-pulls |
 | Work table processing | Custom truncate+reload | dbt `table` materialization (delta-only) |
 | Deduplication | Custom hash comparison | Same MD5 hash, dedup against published UDL |
 | SCD-2 history | NEWSLETTER_HIST with active_flag | Same pattern: NEWSLETTER_HIST with active_flag |

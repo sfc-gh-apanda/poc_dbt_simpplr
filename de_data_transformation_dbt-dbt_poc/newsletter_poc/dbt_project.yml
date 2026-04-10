@@ -3,8 +3,9 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 #
 # FEATURES:
-#   - Airflow watermark integration (batch_run_id, data_process_start/end_time)
-#   - Narrow delta reads (same start→end window as Scala pipeline)
+#   - Airflow watermark integration (batch_run_id, data_process_end_time)
+#   - Self-pruning raw tables: no start_time filter (archive removes processed records)
+#   - Customer-driven reprocessing (REPROCESS_REQUEST → archive pull → staging UNION)
 #   - Audit columns (batch_run_id, dbt_run_id, dbt_batch_id, dbt_loaded_at, dbt_source_model)
 #   - Row hash for change detection (entity-specific, Scala-compatible)
 #   - Delta-only work tables with hash-based deduplication against UDL
@@ -49,8 +50,10 @@ on-run-end:
 vars:
   default_null_timestamp: '2000-01-01 00:00:00'
 
-  # Airflow watermark: narrow delta window (passed via --vars from Airflow DAG)
-  # Defaults allow standalone dbt build without Airflow (reads everything).
+  # Airflow watermark (passed via --vars from Airflow DAG)
+  # Raw tables are self-pruning (archive removes processed records), so only
+  # end_time is needed.  start_time is retained for backward compatibility
+  # but staging models no longer filter on it.
   batch_run_id: 0
   data_process_start_time: '2000-01-01 00:00:00'
   data_process_end_time: '9999-12-31 23:59:59'

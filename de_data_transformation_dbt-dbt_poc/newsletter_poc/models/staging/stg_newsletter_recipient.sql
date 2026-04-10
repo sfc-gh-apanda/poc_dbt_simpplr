@@ -22,7 +22,6 @@
 {% set recipient_where %}
     nl.domain_payload::STRING IS NOT NULL
     AND nl.domain_payload:id::STRING IS NOT NULL
-    AND nl.created_datetime >= '{{ var("data_process_start_time") }}'::TIMESTAMP_NTZ
     AND nl.created_datetime <= '{{ var("data_process_end_time") }}'::TIMESTAMP_NTZ
 {% endset %}
 
@@ -35,8 +34,22 @@ WITH raw_data AS (
     GROUP BY recp_tenant_code, recp_code, recp_staging_id
 ),
 
+reprocess_data AS (
+    SELECT
+        {{ recipient_columns }}
+    FROM {{ source('shared_services_staging', 'ENL_NEWSLETTER_ARCHIVE') }} nl
+    INNER JOIN UDL_BATCH_PROCESS.REPROCESS_REQUEST r
+        ON  nl.domain_payload:id::STRING = r.RECORD_CODE
+        AND TRY_PARSE_JSON(nl.header:tenant_info):accountId::STRING = r.TENANT_CODE,
+         LATERAL FLATTEN(input => nl.domain_payload:recipients::VARIANT, OUTER => TRUE) AS fv
+    WHERE r.STATUS = 'PENDING'
+      AND r.ENTITY_TYPE = 'NEWSLETTER'
+      AND nl.domain_payload::STRING IS NOT NULL
+    GROUP BY recp_tenant_code, recp_code, recp_staging_id
+),
+
 {% if is_entity_full_load %}
-archive_data AS (
+full_load_archive AS (
     SELECT
         {{ recipient_columns }}
     FROM {{ source('shared_services_staging', 'ENL_NEWSLETTER_ARCHIVE') }} nl,
@@ -48,11 +61,13 @@ archive_data AS (
 combined AS (
     SELECT * FROM raw_data
     UNION ALL
-    SELECT * FROM archive_data
+    SELECT * FROM full_load_archive
 )
 {% else %}
 combined AS (
     SELECT * FROM raw_data
+    UNION ALL
+    SELECT * FROM reprocess_data
 )
 {% endif %}
 
