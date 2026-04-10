@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS DBT_MODEL_LOG (
     schema_name             VARCHAR(100)                    COMMENT 'Target schema',
     database_name           VARCHAR(100)                    COMMENT 'Target database',
     materialization         VARCHAR(50)                     COMMENT 'table / view / incremental',
-    batch_id                VARCHAR(50)                     COMMENT 'Unique batch ID per model per run',
+    batch_id                VARCHAR(150)                    COMMENT 'Unique batch ID per model per run',
     status                  VARCHAR(20)                     COMMENT 'SUCCESS / FAIL / ERROR / SKIPPED',
     error_message           VARCHAR(4000)                   COMMENT 'Error details if failed',
     started_at              TIMESTAMP_NTZ                   COMMENT 'Model execution start',
@@ -56,6 +56,9 @@ CREATE TABLE IF NOT EXISTS DBT_MODEL_LOG (
     incremental_strategy    VARCHAR(50)                     COMMENT 'merge / append / delete+insert',
     created_at              TIMESTAMP_NTZ   DEFAULT CURRENT_TIMESTAMP()
 );
+
+-- Widen batch_id for existing deployments (invocation_id + model_name can exceed 50 chars)
+ALTER TABLE IF EXISTS DBT_MODEL_LOG MODIFY COLUMN batch_id VARCHAR(150);
 
 -- =============================================================
 -- 4. Summary views for monitoring

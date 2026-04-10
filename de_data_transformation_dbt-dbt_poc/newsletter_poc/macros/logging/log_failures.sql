@@ -51,7 +51,7 @@ This gives PRC_DBT_SMART_RETRY reliable data to determine what needs re-run.
                         '{{ result.node.schema }}',
                         '{{ result.node.database }}',
                         '{{ result.node.config.materialized }}',
-                        '{{ invocation_id }}_{{ result.node.name }}',
+                        '{{ modules.datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S") }}_{{ result.node.name }}',
                         '{{ mapped_status }}',
                         '{{ safe_message }}',
                         CURRENT_TIMESTAMP(),
