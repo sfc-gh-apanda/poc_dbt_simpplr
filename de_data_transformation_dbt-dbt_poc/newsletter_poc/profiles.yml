@@ -8,5 +8,5 @@ newsletter_poc:
       role: ACCOUNTADMIN
       warehouse: COMPUTE_WH
       database: COMMON_TENANT_DEV
-      schema: DBT_UDL
+      schema: DBT_UDL_BATCH_PROCESS
       threads: 4

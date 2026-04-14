@@ -1,7 +1,7 @@
 {{
     config(
         materialized='table',
-        schema='UDL',
+        schema='DBT_UDL_BATCH_PROCESS',
         tags=['newsletter', 'staging', 'flatten'],
         query_tag='dbt_stg_newsletter_recipient'
     )
@@ -38,7 +38,7 @@ reprocess_data AS (
     SELECT
         {{ recipient_columns }}
     FROM {{ source('shared_services_staging', 'ENL_NEWSLETTER_ARCHIVE') }} nl
-    INNER JOIN UDL_BATCH_PROCESS.REPROCESS_REQUEST r
+    INNER JOIN DBT_UDL_BATCH_PROCESS.REPROCESS_REQUEST r
         ON  nl.domain_payload:id::STRING = r.RECORD_CODE
         AND TRY_PARSE_JSON(nl.header:tenant_info):accountId::STRING = r.TENANT_CODE,
          LATERAL FLATTEN(input => nl.domain_payload:recipients::VARIANT, OUTER => TRUE) AS fv

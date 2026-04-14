@@ -40,15 +40,15 @@ USING (
     SELECT column1 AS model_name, column2 AS model_type, column3 AS schema_name,
            column4 AS is_critical, column5 AS depends_on, column6 AS retry_with_suffix
     FROM VALUES
-        ('stg_newsletter',                     'staging',       'UDL',     TRUE,  NULL,                                                          TRUE),
-        ('stg_newsletter_recipient',           'staging',       'UDL',     TRUE,  NULL,                                                          TRUE),
-        ('stg_newsletter_interaction',         'staging',       'UDL',     TRUE,  NULL,                                                          TRUE),
-        ('stg_newsletter_category',            'staging',       'UDL',     TRUE,  NULL,                                                          TRUE),
-        ('int_newsletter_joined',              'intermediate',  'UDL',     TRUE,  'stg_newsletter,stg_newsletter_recipient,stg_newsletter_interaction', TRUE),
-        ('wrk_newsletter',                     'marts',         'DBT_UDL', TRUE,  'int_newsletter_joined',                                       TRUE),
-        ('wrk_newsletter_interaction',         'marts',         'DBT_UDL', TRUE,  'stg_newsletter_interaction',                                  TRUE),
-        ('wrk_newsletter_category',            'marts',         'DBT_UDL', TRUE,  'stg_newsletter_category',                                     TRUE),
-        ('pipeline_complete',                  'sentinel',      'DBT_UDL', TRUE,  'wrk_newsletter,wrk_newsletter_interaction,wrk_newsletter_category', FALSE)
+        ('stg_newsletter',                     'staging',       'DBT_UDL_BATCH_PROCESS', TRUE,  NULL,                                                          TRUE),
+        ('stg_newsletter_recipient',           'staging',       'DBT_UDL_BATCH_PROCESS', TRUE,  NULL,                                                          TRUE),
+        ('stg_newsletter_interaction',         'staging',       'DBT_UDL_BATCH_PROCESS', TRUE,  NULL,                                                          TRUE),
+        ('stg_newsletter_category',            'staging',       'DBT_UDL_BATCH_PROCESS', TRUE,  NULL,                                                          TRUE),
+        ('int_newsletter_joined',              'intermediate',  'DBT_UDL_BATCH_PROCESS', TRUE,  'stg_newsletter,stg_newsletter_recipient,stg_newsletter_interaction', TRUE),
+        ('wrk_newsletter',                     'marts',         'DBT_UDL_BATCH_PROCESS', TRUE,  'int_newsletter_joined',                                       TRUE),
+        ('wrk_newsletter_interaction',         'marts',         'DBT_UDL_BATCH_PROCESS', TRUE,  'stg_newsletter_interaction',                                  TRUE),
+        ('wrk_newsletter_category',            'marts',         'DBT_UDL_BATCH_PROCESS', TRUE,  'stg_newsletter_category',                                     TRUE),
+        ('pipeline_complete',                  'sentinel',      'DBT_UDL',               TRUE,  'wrk_newsletter,wrk_newsletter_interaction,wrk_newsletter_category', FALSE)
 ) s ON t.model_name = s.model_name
 WHEN MATCHED THEN UPDATE SET
     model_type = s.model_type, schema_name = s.schema_name,
@@ -141,7 +141,7 @@ ORDER BY ml.started_at;
 --    Returns:  JSON with status, the built command, and the list of models.
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-CREATE OR REPLACE PROCEDURE UDL_BATCH_PROCESS.PRC_DBT_SMART_RETRY(
+CREATE OR REPLACE PROCEDURE DBT_UDL_BATCH_PROCESS.PRC_DBT_SMART_RETRY(
     P_STAGE        VARCHAR,
     P_PROJECT_ROOT VARCHAR,
     P_TARGET       VARCHAR,
@@ -290,7 +290,7 @@ $$;
 --    and automatically retries failed models up to N times.
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-CREATE OR REPLACE PROCEDURE UDL_BATCH_PROCESS.PRC_DBT_FULL_RUN_WITH_RETRY(
+CREATE OR REPLACE PROCEDURE DBT_UDL_BATCH_PROCESS.PRC_DBT_FULL_RUN_WITH_RETRY(
     P_STAGE        VARCHAR,
     P_PROJECT_ROOT VARCHAR,
     P_TARGET       VARCHAR,
@@ -341,7 +341,7 @@ BEGIN
     WHILE (v_run_status IN ('FAILED', 'ERROR') AND v_attempt < P_MAX_RETRIES) DO
         v_attempt := v_attempt + 1;
 
-        CALL UDL_BATCH_PROCESS.PRC_DBT_SMART_RETRY(
+        CALL DBT_UDL_BATCH_PROCESS.PRC_DBT_SMART_RETRY(
             P_STAGE, P_PROJECT_ROOT, P_TARGET, NULL, FALSE
         ) INTO v_retry_result;
 

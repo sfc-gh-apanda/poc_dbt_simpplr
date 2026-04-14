@@ -28,7 +28,7 @@ The pipeline is organized into **five distinct layers**, each with a clear purpo
                   │                  │                  │
                   ▼                  ▼                  ▼
   ┌─────────────────────────────────────────────────────────────────────┐
-  │  STAGING  (UDL)                                    materialized: table │
+  │  STAGING  (DBT_UDL_BATCH_PROCESS)                   materialized: table │
   │                                                                     │
   │  Self-pruning: WHERE created_datetime <= end_time                   │
   │  (raw tables are pruned by archive; no start_time needed)          │
@@ -59,7 +59,7 @@ The pipeline is organized into **five distinct layers**, each with a clear purpo
               │                     │                  │
               ▼                     ▼                  ▼
   ┌─────────────────────────────────────────────────────────────────────┐
-  │  SEEDS  (UDL)                              6 Reference CSV Tables   │
+  │  SEEDS  (DBT_UDL_BATCH_PROCESS)             6 Reference CSV Tables   │
   │  ref_newsletter_status  ·  ref_newsletter_recipient_type           │
   │  ref_newsletter_interaction_type  ·  ref_newsletter_delivery_...   │
   │  ref_newsletter_click_type  ·  ref_newsletter_block_type           │
@@ -74,20 +74,20 @@ The pipeline is organized into **five distinct layers**, each with a clear purpo
   │  wrk_newsletter_interaction  ← stg_interaction + 5 seeds           │
   │  wrk_newsletter_category     ← stg_category (self-contained)       │
   │                                                                     │
-  │  Hash-dedup against UDL published tables · Reference enrichment    │
+  │  Hash-dedup against DBT_UDL published tables · Reference enrichment │
   │  Audit columns · Schema contracts · Contains only current delta    │
   └───────────────┬────────────────────────────────────────────────────┘
                   │
                   ▼
   ┌─────────────────────────────────────────────────────────────────────┐
-  │  PUBLISH (UDL)            HIST-as-master via stored procedure       │
+  │  PUBLISH (DBT_UDL)        HIST-as-master via stored procedure        │
   │                                                                     │
-  │  UDL.NEWSLETTER_HIST         ← UPDATE deactivate + INSERT new      │
+  │  DBT_UDL.NEWSLETTER_HIST         ← UPDATE deactivate + INSERT new  │
   │    (master SCD-2 accumulator, active_flag tracked)                 │
-  │  UDL.NEWSLETTER              ← TRUNCATE + INSERT WHERE active=TRUE │
+  │  DBT_UDL.NEWSLETTER          ← TRUNCATE + INSERT WHERE active=TRUE │
   │    (derived current state, Time Travel preserved)                   │
-  │  UDL.NEWSLETTER_INTERACTION  ← MERGE delta from WRK (Time Travel) │
-  │  UDL.NEWSLETTER_CATEGORY     ← MERGE delta from WRK (Time Travel) │
+  │  DBT_UDL.NEWSLETTER_INTERACTION ← MERGE from WRK (Time Travel)    │
+  │  DBT_UDL.NEWSLETTER_CATEGORY    ← MERGE from WRK (Time Travel)   │
   │                                                                     │
   │  All within a single transaction for atomicity                      │
   └─────────────────────────────────────────────────────────────────────┘
@@ -123,7 +123,7 @@ The pipeline is organized into **five distinct layers**, each with a clear purpo
 
 **Self-pruning raw tables:** Staging reads everything in raw up to `data_process_end_time`. There is no `start_time` filter because the raw tables are self-pruning — the archive procedure removes processed records after each run. This means whatever remains in raw is, by definition, unprocessed data that should be picked up.
 
-**Customer-driven reprocessing:** If records have been archived and need reprocessing, customers/support insert rows into `UDL_BATCH_PROCESS.REPROCESS_REQUEST` with the target `ENTITY_TYPE`, `RECORD_CODE`, and `TENANT_CODE`. The staging models automatically JOIN the archive tables with pending reprocess requests and UNION the results with raw data. After publish, requests are marked `COMPLETED` and archived to `REPROCESS_REQUEST_HIST`.
+**Customer-driven reprocessing:** If records have been archived and need reprocessing, customers/support insert rows into `DBT_UDL_BATCH_PROCESS.REPROCESS_REQUEST` with the target `ENTITY_TYPE`, `RECORD_CODE`, and `TENANT_CODE`. The staging models automatically JOIN the archive tables with pending reprocess requests and UNION the results with raw data. After publish, requests are marked `COMPLETED` and archived to `REPROCESS_REQUEST_HIST`.
 
 ---
 
@@ -141,18 +141,18 @@ The pipeline is organized into **five distinct layers**, each with a clear purpo
 
 | Model | Materialization | Key Logic |
 |-------|-----------------|-----------|
-| `wrk_newsletter` | Table (delta-only) | Hash-based deduplication against `UDL.NEWSLETTER`. Reference table lookups for `status_code` and `recipient_type_code`. Tenant-aware ID prefixing. Contains only current run's new/changed records. Published to `NEWSLETTER_HIST` then derived to `UDL.NEWSLETTER`. |
-| `wrk_newsletter_interaction` | Table (delta-only) | Hash-based deduplication against `UDL.NEWSLETTER_INTERACTION`. Five reference table joins. Device type classification. Published via MERGE to `UDL.NEWSLETTER_INTERACTION`. |
-| `wrk_newsletter_category` | Table (delta-only) | Hash-based deduplication against `UDL.NEWSLETTER_CATEGORY`. Data source derivation. Published via MERGE to `UDL.NEWSLETTER_CATEGORY`. |
+| `wrk_newsletter` | Table (delta-only) | Hash-based deduplication against `DBT_UDL.NEWSLETTER`. Reference table lookups for `status_code` and `recipient_type_code`. Tenant-aware ID prefixing. Contains only current run's new/changed records. Published to `NEWSLETTER_HIST` then derived to `DBT_UDL.NEWSLETTER`. |
+| `wrk_newsletter_interaction` | Table (delta-only) | Hash-based deduplication against `DBT_UDL.NEWSLETTER_INTERACTION`. Five reference table joins. Device type classification. Published via MERGE to `DBT_UDL.NEWSLETTER_INTERACTION`. |
+| `wrk_newsletter_category` | Table (delta-only) | Hash-based deduplication against `DBT_UDL.NEWSLETTER_CATEGORY`. Data source derivation. Published via MERGE to `DBT_UDL.NEWSLETTER_CATEGORY`. |
 
-**Design rationale:** Materialized as **table** (rebuilt each run with delta only). Each wrk table contains only the current run's new/changed records, deduped against the published UDL tables. This mirrors the existing Scala pipeline's pattern where work tables are truncated and reloaded each run.
+**Design rationale:** Materialized as **table** (rebuilt each run with delta only). Each wrk table contains only the current run's new/changed records, deduped against the published DBT_UDL tables. This mirrors the existing Scala pipeline's pattern where work tables are truncated and reloaded each run.
 
 **Key features applied at this layer:**
 
 | Feature | Implementation |
 |---------|----------------|
 | Schema Contracts | `contract: enforced: true` — every column's name and data type is validated at build time |
-| Delta-Only Dedup | Hash-based: new records are compared against published UDL `hash_value` to skip unchanged data |
+| Delta-Only Dedup | Hash-based: new records are compared against published DBT_UDL `hash_value` to skip unchanged data |
 | Audit Columns | `batch_run_id` (Airflow), `dbt_loaded_at`, `dbt_run_id`, `dbt_batch_id`, `dbt_source_model`, `dbt_environment` |
 | Row Count Tracking | `log_model_with_row_count()` post-hook captures rows affected per model |
 | Composite Uniqueness | `dbt_utils.unique_combination_of_columns` test on `(tenant_code, code)` |
@@ -210,9 +210,9 @@ Schemas are aligned with the existing architecture for clear separation:
 | Schema | Purpose |
 |--------|---------|
 | `SHARED_SERVICES_STAGING` | Raw Kafka data (input) |
-| `UDL` | Staging tables, seeds, published tables (NEWSLETTER derived from NEWSLETTER_HIST) |
+| `DBT_UDL` | Published target tables (NEWSLETTER, NEWSLETTER_HIST, NEWSLETTER_INTERACTION, NEWSLETTER_CATEGORY) |
 | `DBT_UDL` | dbt delta work tables (wrk_*) |
-| `UDL_BATCH_PROCESS` | Stored procedures (publish, archive, retry) |
+| `DBT_UDL_BATCH_PROCESS` | Staging (stg_*), work (wrk_*), seeds, stored procedures, reprocess queue |
 | `DBT_EXECUTION_RUN_STATS` | Run & model logs, test results, build artifacts |
 
 ---
@@ -230,14 +230,17 @@ Kafka Messages (VARIANT)
     ├── Rank by kafka_timestamp → keep latest per (tenant, code)
     │
     ├── Lookup reference codes (status, recipient type, etc.)
-    ├── Deduplicate against published UDL tables (hash comparison)
+    ├── Deduplicate against published DBT_UDL tables (hash comparison)
     ├── Apply null defaults, tenant-aware ID prefixing
     ├── Add audit columns (batch_run_id, dbt_run_id, dbt_batch_id, loaded_at)
     │
     ├── Build delta-only work tables (current run's changes)
     │
-    └── Publish: NEWSLETTER_HIST (SCD-2) → UDL.NEWSLETTER (active)
-                 INTERACTION/CATEGORY → MERGE into UDL
+    └── Publish (PRC_DBT_PUBLISH_TO_TARGET):
+                 Delta mode: NEWSLETTER_HIST SCD-2 + MERGE for others
+                 Full load:  DELETE HIST + TRUNCATE targets + INSERT
+                 Dynamic column discovery from INFORMATION_SCHEMA
+                 Step-level logging per entity (RUNNING → SUCCESS/ERROR)
                  Stamps published_by_run_id on all target tables
 ```
 
@@ -267,7 +270,7 @@ Airflow DAG run
        └→ prc_udl_batch_handler("complete", batch_run_id)
 ```
 
-### Traceability columns on every UDL record
+### Traceability columns on every DBT_UDL record
 
 | Column | Source | Purpose |
 |--------|--------|---------|
@@ -303,8 +306,8 @@ PRC_DBT_PUBLISH_TO_TARGET:
 
 | Table | Schema | Purpose |
 |-------|--------|---------|
-| `REPROCESS_REQUEST` | `UDL_BATCH_PROCESS` | Active queue — PENDING requests picked up by staging |
-| `REPROCESS_REQUEST_HIST` | `UDL_BATCH_PROCESS` | Completed requests for audit trail |
+| `REPROCESS_REQUEST` | `DBT_UDL_BATCH_PROCESS` | Active queue — PENDING requests picked up by staging |
+| `REPROCESS_REQUEST_HIST` | `DBT_UDL_BATCH_PROCESS` | Completed requests for audit trail |
 
 ### Key Columns
 

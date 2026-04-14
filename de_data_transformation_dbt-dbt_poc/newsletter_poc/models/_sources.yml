@@ -112,9 +112,9 @@ sources:
           in combination with the raw view.
 
   - name: udl_published
-    description: "Published UDL target tables — used for hash-based deduplication in wrk models"
+    description: "Published DBT_UDL target tables — used for hash-based deduplication in wrk models"
     database: COMMON_TENANT_DEV
-    schema: UDL
+    schema: DBT_UDL
     tags: ['newsletter', 'published']
     tables:
       - name: NEWSLETTER

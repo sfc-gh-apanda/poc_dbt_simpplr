@@ -26,7 +26,7 @@ Prerequisites:
         {% set end_time = var('data_process_end_time', '9999-12-31 23:59:59') %}
 
         {% set sql %}
-            CALL UDL_BATCH_PROCESS.PRC_DBT_ARCHIVE_RAW_DATA(
+            CALL DBT_UDL_BATCH_PROCESS.PRC_DBT_ARCHIVE_RAW_DATA(
                 '{{ invocation_id }}',
                 '{{ end_time }}'
             );

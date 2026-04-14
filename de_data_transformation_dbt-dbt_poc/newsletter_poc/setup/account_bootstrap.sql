@@ -6,8 +6,8 @@
 --   1. Database and schemas
 --   2. Source tables (3 raw views)
 --   3. Archive tables (3, same structure as raw)
---   4. UDL target tables (NEWSLETTER, NEWSLETTER_INTERACTION, NEWSLETTER_CATEGORY)
---   5. UDL.NEWSLETTER_HIST (master SCD-2 accumulator with active_flag tracking)
+--   4. DBT_UDL target tables (NEWSLETTER, NEWSLETTER_INTERACTION, NEWSLETTER_CATEGORY)
+--   5. DBT_UDL.NEWSLETTER_HIST (master SCD-2 accumulator with active_flag tracking)
 --   6. REPROCESS_REQUEST + _HIST (customer-driven reprocessing queue)
 --   7. Sample data (newsletters, interactions, categories)
 --   8. External access integration for dbt packages (dbt_utils, dbt_expectations)
@@ -45,14 +45,11 @@ USE DATABASE COMMON_TENANT_DEV;
 CREATE SCHEMA IF NOT EXISTS SHARED_SERVICES_STAGING
     COMMENT = 'Raw source views and archive tables (Kafka-ingested newsletter events)';
 
-CREATE SCHEMA IF NOT EXISTS UDL
-    COMMENT = 'User-facing target tables — NEWSLETTER derived from NEWSLETTER_HIST, INTERACTION/CATEGORY via MERGE';
-
 CREATE SCHEMA IF NOT EXISTS DBT_UDL
-    COMMENT = 'dbt delta work tables (wrk_*, seeds, pipeline_complete)';
+    COMMENT = 'Published target tables — NEWSLETTER, NEWSLETTER_HIST, INTERACTION, CATEGORY, pipeline_complete view';
 
-CREATE SCHEMA IF NOT EXISTS UDL_BATCH_PROCESS
-    COMMENT = 'Stored procedures for publish, archive, and retry operations';
+CREATE SCHEMA IF NOT EXISTS DBT_UDL_BATCH_PROCESS
+    COMMENT = 'dbt working area — staging (stg_*), work (wrk_*), seeds, stored procedures, reprocess queue';
 
 CREATE SCHEMA IF NOT EXISTS DBT_EXECUTION_RUN_STATS
     COMMENT = 'dbt processing tracking, audit, and observability';
@@ -130,12 +127,12 @@ CREATE TABLE IF NOT EXISTS SHARED_SERVICES_STAGING.ENL_NEWSLETTER_CATEGORY_ARCHI
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════
--- 5. UDL TARGET TABLES — Must pre-exist for the HIST-as-master publish procedure.
+-- 5. DBT_UDL TARGET TABLES — Must pre-exist for the HIST-as-master publish procedure.
 --    NEWSLETTER: derived from NEWSLETTER_HIST (active_flag = TRUE).
 --    INTERACTION / CATEGORY: populated via delta MERGE from wrk_* tables.
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER (
+CREATE TABLE IF NOT EXISTS DBT_UDL.NEWSLETTER (
     ID                              NUMBER(38,0) NOT NULL,
     DATA_SOURCE_CODE                VARCHAR(16),
     TENANT_CODE                     VARCHAR(255) NOT NULL,
@@ -185,7 +182,7 @@ CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER (
     DBT_ENVIRONMENT                 VARCHAR(20)
 );
 
-CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER_INTERACTION (
+CREATE TABLE IF NOT EXISTS DBT_UDL.NEWSLETTER_INTERACTION (
     ID                              NUMBER(38,0) NOT NULL,
     DATA_SOURCE_CODE                VARCHAR(16),
     TENANT_CODE                     VARCHAR(255) NOT NULL,
@@ -230,7 +227,7 @@ CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER_INTERACTION (
     PUBLISHED_AT                    TIMESTAMP_NTZ
 );
 
-CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER_CATEGORY (
+CREATE TABLE IF NOT EXISTS DBT_UDL.NEWSLETTER_CATEGORY (
     ID                              NUMBER(38,0) NOT NULL,
     DATA_SOURCE_CODE                VARCHAR(16),
     TENANT_CODE                     VARCHAR(255) NOT NULL,
@@ -262,20 +259,20 @@ CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER_CATEGORY (
 --     Critical for multi-billion row tables (especially NEWSLETTER_INTERACTION).
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-ALTER TABLE UDL.NEWSLETTER CLUSTER BY (TENANT_CODE, CODE);
-ALTER TABLE UDL.NEWSLETTER_INTERACTION CLUSTER BY (TENANT_CODE, CODE);
-ALTER TABLE UDL.NEWSLETTER_CATEGORY CLUSTER BY (TENANT_CODE, CODE);
+ALTER TABLE DBT_UDL.NEWSLETTER CLUSTER BY (TENANT_CODE, CODE);
+ALTER TABLE DBT_UDL.NEWSLETTER_INTERACTION CLUSTER BY (TENANT_CODE, CODE);
+ALTER TABLE DBT_UDL.NEWSLETTER_CATEGORY CLUSTER BY (TENANT_CODE, CODE);
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════
--- 6. UDL.NEWSLETTER_HIST — Master SCD-2 accumulator (HIST-as-master pattern)
+-- 6. DBT_UDL.NEWSLETTER_HIST — Master SCD-2 accumulator (HIST-as-master pattern)
 --    Contains ALL versions with active_flag tracking:
---      active_flag=TRUE  → current active record (appears in UDL.NEWSLETTER)
+--      active_flag=TRUE  → current active record (appears in DBT_UDL.NEWSLETTER)
 --      active_flag=FALSE → superseded historical version
 --    Column order matches wrk_newsletter contract + publish tracking columns.
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER_HIST (
+CREATE TABLE IF NOT EXISTS DBT_UDL.NEWSLETTER_HIST (
     id                              NUMBER(38,0),
     data_source_code                VARCHAR(16),
     tenant_code                     VARCHAR(255),
@@ -329,7 +326,7 @@ CREATE TABLE IF NOT EXISTS UDL.NEWSLETTER_HIST (
     published_at                    TIMESTAMP_NTZ
 );
 
-ALTER TABLE UDL.NEWSLETTER_HIST CLUSTER BY (TENANT_CODE, CODE, ACTIVE_FLAG);
+ALTER TABLE DBT_UDL.NEWSLETTER_HIST CLUSTER BY (TENANT_CODE, CODE, ACTIVE_FLAG);
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════
@@ -339,7 +336,7 @@ ALTER TABLE UDL.NEWSLETTER_HIST CLUSTER BY (TENANT_CODE, CODE, ACTIVE_FLAG);
 --     Status lifecycle: PENDING → COMPLETED (after publish succeeds)
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-CREATE TABLE IF NOT EXISTS UDL_BATCH_PROCESS.REPROCESS_REQUEST (
+CREATE TABLE IF NOT EXISTS DBT_UDL_BATCH_PROCESS.REPROCESS_REQUEST (
     REQUEST_ID              NUMBER AUTOINCREMENT,
     ENTITY_TYPE             VARCHAR(50)    NOT NULL,
     RECORD_CODE             VARCHAR(255)   NOT NULL,
@@ -354,7 +351,7 @@ CREATE TABLE IF NOT EXISTS UDL_BATCH_PROCESS.REPROCESS_REQUEST (
     CONSTRAINT uq_reprocess UNIQUE (ENTITY_TYPE, RECORD_CODE, TENANT_CODE, STATUS)
 );
 
-CREATE TABLE IF NOT EXISTS UDL_BATCH_PROCESS.REPROCESS_REQUEST_HIST (
+CREATE TABLE IF NOT EXISTS DBT_UDL_BATCH_PROCESS.REPROCESS_REQUEST_HIST (
     REQUEST_ID              NUMBER,
     ENTITY_TYPE             VARCHAR(50),
     RECORD_CODE             VARCHAR(255),
@@ -757,10 +754,10 @@ FROM COMMON_TENANT_DEV.INFORMATION_SCHEMA.TABLES
 WHERE TABLE_SCHEMA = 'SHARED_SERVICES_STAGING'
 ORDER BY TABLE_NAME;
 
--- Check UDL tables (NEWSLETTER, NEWSLETTER_INTERACTION, NEWSLETTER_CATEGORY, NEWSLETTER_HIST — all empty until first publish)
+-- Check DBT_UDL tables (NEWSLETTER, NEWSLETTER_INTERACTION, NEWSLETTER_CATEGORY, NEWSLETTER_HIST — all empty until first publish)
 SELECT TABLE_SCHEMA, TABLE_NAME, ROW_COUNT
 FROM COMMON_TENANT_DEV.INFORMATION_SCHEMA.TABLES
-WHERE TABLE_SCHEMA = 'UDL'
+WHERE TABLE_SCHEMA = 'DBT_UDL'
 ORDER BY TABLE_NAME;
 
 -- Check sample data counts

@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS DBT_EXECUTION_RUN_STATS.DBT_BUILD_RESULTS (
 --    Can be called standalone or from the execute procedures.
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-CREATE OR REPLACE PROCEDURE UDL_BATCH_PROCESS.PRC_DBT_LOG_ARTIFACTS(
+CREATE OR REPLACE PROCEDURE DBT_UDL_BATCH_PROCESS.PRC_DBT_LOG_ARTIFACTS(
     P_QUERY_ID  VARCHAR,
     P_RUN_ID    VARCHAR DEFAULT NULL
 )
@@ -239,7 +239,7 @@ $$;
 -- 3. PRC_DBT_EXECUTE_AND_LOG_TESTS — Run dbt test + capture results
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-CREATE OR REPLACE PROCEDURE UDL_BATCH_PROCESS.PRC_DBT_EXECUTE_AND_LOG_TESTS(
+CREATE OR REPLACE PROCEDURE DBT_UDL_BATCH_PROCESS.PRC_DBT_EXECUTE_AND_LOG_TESTS(
     P_DBT_PROJECT  VARCHAR,
     P_DBT_ARGS     VARCHAR DEFAULT ''
 )
@@ -277,7 +277,7 @@ BEGIN
     END IF;
 
     -- ── Log artifacts ─────────────────────────────────────────────
-    CALL UDL_BATCH_PROCESS.PRC_DBT_LOG_ARTIFACTS(v_query_id, NULL) INTO v_log_result;
+    CALL DBT_UDL_BATCH_PROCESS.PRC_DBT_LOG_ARTIFACTS(v_query_id, NULL) INTO v_log_result;
 
     RETURN OBJECT_CONSTRUCT(
         'status',       IFF(v_dbt_success, 'success', 'tests_had_failures'),
@@ -297,7 +297,7 @@ $$;
 --    the artifacts. Feeds accurate data to PRC_DBT_SMART_RETRY.
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-CREATE OR REPLACE PROCEDURE UDL_BATCH_PROCESS.PRC_DBT_EXECUTE_AND_LOG_BUILD(
+CREATE OR REPLACE PROCEDURE DBT_UDL_BATCH_PROCESS.PRC_DBT_EXECUTE_AND_LOG_BUILD(
     P_DBT_PROJECT   VARCHAR,
     P_DBT_ARGS      VARCHAR DEFAULT '',
     P_DBT_VARS      VARCHAR DEFAULT NULL
@@ -343,7 +343,7 @@ BEGIN
     END IF;
 
     -- ── Log artifacts (models + tests) ────────────────────────────
-    CALL UDL_BATCH_PROCESS.PRC_DBT_LOG_ARTIFACTS(v_query_id, NULL) INTO v_log_result;
+    CALL DBT_UDL_BATCH_PROCESS.PRC_DBT_LOG_ARTIFACTS(v_query_id, NULL) INTO v_log_result;
 
     RETURN OBJECT_CONSTRUCT(
         'status',       IFF(v_dbt_success, 'success', 'build_had_failures'),
@@ -362,7 +362,7 @@ $$;
 --    failure detection, falling back to DBT_MODEL_LOG if artifacts unavailable.
 -- ═══════════════════════════════════════════════════════════════════════════════
 
-CREATE OR REPLACE PROCEDURE UDL_BATCH_PROCESS.PRC_DBT_SMART_RETRY_V2(
+CREATE OR REPLACE PROCEDURE DBT_UDL_BATCH_PROCESS.PRC_DBT_SMART_RETRY_V2(
     P_DBT_PROJECT   VARCHAR,
     P_DBT_ARGS_BASE VARCHAR DEFAULT '--target dev',
     P_QUERY_ID      VARCHAR DEFAULT NULL,
@@ -439,7 +439,7 @@ BEGIN
             v_new_query_id := LAST_QUERY_ID();
 
             -- Log the retry run's artifacts too
-            CALL UDL_BATCH_PROCESS.PRC_DBT_LOG_ARTIFACTS(v_new_query_id, NULL) INTO v_log_result;
+            CALL DBT_UDL_BATCH_PROCESS.PRC_DBT_LOG_ARTIFACTS(v_new_query_id, NULL) INTO v_log_result;
         EXCEPTION
             WHEN OTHER THEN
                 v_new_query_id := LAST_QUERY_ID();

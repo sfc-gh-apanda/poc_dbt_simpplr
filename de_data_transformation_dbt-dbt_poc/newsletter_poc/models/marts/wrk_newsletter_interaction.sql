@@ -1,13 +1,17 @@
 {{
     config(
         materialized='table',
-        schema='DBT_UDL',
+        schema='DBT_UDL_BATCH_PROCESS',
         cluster_by=['SUBSTRING(tenant_code, -5)'],
         tags=['newsletter_interaction', 'wrk', 'delta'],
         query_tag='dbt_wrk_newsletter_interaction',
         post_hook=["{{ log_model_with_row_count() }}"]
     )
 }}
+
+{% set full_load = var('is_full_load', false) %}
+{% set entity_full = var('entity_specific_full_load', 'none') | upper %}
+{% set is_this_full = full_load or 'NEWSLETTER_INTERACTION' in entity_full.split(',') or entity_full == 'ALL' %}
 
 WITH source_data AS (
     SELECT * FROM {{ ref('stg_newsletter_interaction') }}
@@ -28,6 +32,9 @@ latest AS (
 ),
 
 deduped AS (
+    {% if is_this_full %}
+    SELECT l.* FROM latest l
+    {% else %}
     SELECT l.*
     FROM latest l
     LEFT JOIN {{ source('udl_published', 'NEWSLETTER_INTERACTION') }} t
@@ -35,6 +42,7 @@ deduped AS (
        AND l.code = t.code
        AND l.hash_value = t.hash_value
     WHERE t.hash_value IS NULL
+    {% endif %}
 ),
 
 ref_interaction AS (
@@ -91,8 +99,12 @@ enriched AS (
 
 final AS (
     SELECT
+        {% if is_this_full %}
+        ROW_NUMBER() OVER (ORDER BY kafka_timestamp) AS id,
+        {% else %}
         ROW_NUMBER() OVER (ORDER BY kafka_timestamp)
             + COALESCE((SELECT MAX(id) FROM {{ source('udl_published', 'NEWSLETTER_INTERACTION') }}), 0) AS id,
+        {% endif %}
 
         {{ data_source_code('tenant_code') }}                        AS data_source_code,
         COALESCE(tenant_code, 'N/A')                                 AS tenant_code,

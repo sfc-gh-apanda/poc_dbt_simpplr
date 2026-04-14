@@ -8,7 +8,7 @@
 #   - Customer-driven reprocessing (REPROCESS_REQUEST → archive pull → staging UNION)
 #   - Audit columns (batch_run_id, dbt_run_id, dbt_batch_id, dbt_loaded_at, dbt_source_model)
 #   - Row hash for change detection (entity-specific, Scala-compatible)
-#   - Delta-only work tables with hash-based deduplication against UDL
+#   - Delta-only work tables with hash-based deduplication against DBT_UDL
 #   - Processing tracking (run log, model log)
 #   - Automated logging via hooks
 #   - HIST-as-master SCD-2 pattern (NEWSLETTER_HIST accumulator)
@@ -67,7 +67,7 @@ vars:
 
   enable_row_count_tracking: true
 
-  # Publish: HIST-as-master pattern — wrk delta → NEWSLETTER_HIST → UDL tables
+  # Publish: HIST-as-master pattern — wrk delta → NEWSLETTER_HIST → DBT_UDL tables
   enable_publish: true
 
   # Archive: move processed raw records to archive tables after publish
@@ -79,7 +79,7 @@ vars:
 
 seeds:
   newsletter_poc:
-    +schema: UDL
+    +schema: DBT_UDL_BATCH_PROCESS
     +tags: ['reference_data']
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -100,7 +100,7 @@ models:
     # ═══════════════════════════════════════════════════════════════
     staging:
       +materialized: table
-      +schema: UDL
+      +schema: DBT_UDL_BATCH_PROCESS
       +tags: ['newsletter', 'staging']
       +access: protected
       +query_tag: 'dbt_newsletter_staging'
@@ -112,7 +112,7 @@ models:
     # ═══════════════════════════════════════════════════════════════
     intermediate:
       +materialized: ephemeral
-      +schema: UDL
+      +schema: DBT_UDL_BATCH_PROCESS
       +tags: ['newsletter', 'intermediate']
       +access: protected
       +docs:
@@ -124,7 +124,7 @@ models:
     marts:
       +materialized: table
       +transient: false
-      +schema: DBT_UDL
+      +schema: DBT_UDL_BATCH_PROCESS
       +tags: ['newsletter', 'marts', 'delta']
       +access: public
       +query_tag: 'dbt_newsletter_marts'

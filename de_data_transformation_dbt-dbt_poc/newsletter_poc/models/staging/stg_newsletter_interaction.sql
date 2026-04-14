@@ -1,7 +1,7 @@
 {{
     config(
         materialized='table',
-        schema='UDL',
+        schema='DBT_UDL_BATCH_PROCESS',
         tags=['newsletter_interaction', 'staging', 'variant_parse'],
         query_tag='dbt_stg_newsletter_interaction'
     )
@@ -108,7 +108,7 @@ reprocess_data AS (
     SELECT
         {{ interaction_columns }}
     FROM {{ source('shared_services_staging', 'ENL_NEWSLETTER_INTERACTION_ARCHIVE') }} c
-    INNER JOIN UDL_BATCH_PROCESS.REPROCESS_REQUEST r
+    INNER JOIN DBT_UDL_BATCH_PROCESS.REPROCESS_REQUEST r
         ON  c.domain_payload:id::STRING = r.RECORD_CODE
         AND TRY_PARSE_JSON(c.header:tenant_info):accountId::STRING = r.TENANT_CODE
     WHERE r.STATUS = 'PENDING'

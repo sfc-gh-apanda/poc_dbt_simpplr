@@ -1,6 +1,0 @@
-id,code,description,active_flag,active_date,identifier_shared_service
-1,NLDS001,Email,TRUE,2024-01-01,email
-2,NLDS002,SMS,TRUE,2024-01-01,sms
-3,NLDS003,Microsoft Teams,TRUE,2024-01-01,msteams
-4,NLDS004,Slack,TRUE,2024-01-01,slack
-5,NLDS005,Intranet,TRUE,2024-01-01,intranet

@@ -1,6 +1,0 @@
-id,code,description,active_flag,active_date,identifier_shared_service
-1,NLB001,Text,TRUE,2024-01-01,text
-2,NLB002,Image,TRUE,2024-01-01,image
-3,NLB003,Button,TRUE,2024-01-01,button
-4,NLB004,Video,TRUE,2024-01-01,video
-5,NLB005,Divider,TRUE,2024-01-01,divider

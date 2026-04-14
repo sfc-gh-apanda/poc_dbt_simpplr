@@ -2,14 +2,14 @@ version: 2
 
 models:
   # ═══════════════════════════════════════════════════════════════════════
-  # wrk_newsletter — Newsletter delta work table (→ NEWSLETTER_HIST → UDL.NEWSLETTER)
+  # wrk_newsletter — Newsletter delta work table (→ NEWSLETTER_HIST → DBT_UDL.NEWSLETTER)
   # ═══════════════════════════════════════════════════════════════════════
   - name: wrk_newsletter
     description: >
       Newsletter delta work table — contains only the current run's new/changed records.
-      Hash-deduped against UDL.NEWSLETTER (published current state). Enriched with
+      Hash-deduped against DBT_UDL.NEWSLETTER (published current state). Enriched with
       reference lookups. Published to NEWSLETTER_HIST (master SCD-2 accumulator) then
-      derived to UDL.NEWSLETTER via TRUNCATE+INSERT (preserves Time Travel).
+      derived to DBT_UDL.NEWSLETTER via TRUNCATE+INSERT (preserves Time Travel).
     config:
       contract:
         enforced: true
@@ -145,13 +145,13 @@ models:
             - code
 
   # ═══════════════════════════════════════════════════════════════════════
-  # wrk_newsletter_interaction — Interaction delta work table (→ UDL.NEWSLETTER_INTERACTION)
+  # wrk_newsletter_interaction — Interaction delta work table (→ DBT_UDL.NEWSLETTER_INTERACTION)
   # ═══════════════════════════════════════════════════════════════════════
   - name: wrk_newsletter_interaction
     description: >
       Newsletter interaction delta work table. Contains only the current run's
-      new/changed records. Hash-deduped against UDL.NEWSLETTER_INTERACTION.
-      Enriched with 5 reference lookups. Published via MERGE to UDL.NEWSLETTER_INTERACTION.
+      new/changed records. Hash-deduped against DBT_UDL.NEWSLETTER_INTERACTION.
+      Enriched with 5 reference lookups. Published via MERGE to DBT_UDL.NEWSLETTER_INTERACTION.
     config:
       contract:
         enforced: true
@@ -276,14 +276,14 @@ models:
             - code
 
   # ═══════════════════════════════════════════════════════════════════════
-  # wrk_newsletter_category — Category delta work table (→ UDL.NEWSLETTER_CATEGORY)
+  # wrk_newsletter_category — Category delta work table (→ DBT_UDL.NEWSLETTER_CATEGORY)
   # ═══════════════════════════════════════════════════════════════════════
   - name: wrk_newsletter_category
     description: >
       Newsletter category delta work table. Contains only the current run's
-      new/changed records. Hash-deduped against UDL.NEWSLETTER_CATEGORY.
+      new/changed records. Hash-deduped against DBT_UDL.NEWSLETTER_CATEGORY.
       Simple entity with code, name, and creation timestamp.
-      Published via MERGE to UDL.NEWSLETTER_CATEGORY.
+      Published via MERGE to DBT_UDL.NEWSLETTER_CATEGORY.
     config:
       contract:
         enforced: true
@@ -369,7 +369,7 @@ models:
     description: >
       Sentinel model that depends on all 3 work models via ref(). Only runs
       after all wrk_* models complete successfully. Post-hooks perform:
-      1. Publish: wrk delta → NEWSLETTER_HIST (SCD-2), MERGE interaction/category, TRUNCATE+INSERT UDL.NEWSLETTER
+      1. Publish: wrk delta → NEWSLETTER_HIST (SCD-2), MERGE interaction/category, TRUNCATE+INSERT DBT_UDL.NEWSLETTER
       2. Archive processed raw records from ENL_* → ENL_*_ARCHIVE (if enabled)
     columns:
       - name: model
