@@ -115,9 +115,15 @@ final AS (
         deleted_note,
         deleted_datetime,
 
+        {% if is_this_full %}
+        CASE WHEN rn = 1 THEN TRUE  ELSE FALSE END                  AS active_flag,
+        CURRENT_TIMESTAMP()::TIMESTAMP_NTZ                           AS active_date,
+        CASE WHEN rn = 1 THEN NULL  ELSE CURRENT_TIMESTAMP() END::TIMESTAMP_NTZ AS inactive_date,
+        {% else %}
         TRUE                                                         AS active_flag,
         CURRENT_TIMESTAMP()::TIMESTAMP_NTZ                           AS active_date,
         NULL::TIMESTAMP_NTZ                                          AS inactive_date,
+        {% endif %}
 
         CURRENT_USER()                                               AS created_by,
         CURRENT_TIMESTAMP()::TIMESTAMP_NTZ                           AS created_datetime,
@@ -130,6 +136,78 @@ final AS (
 
         {{ audit_columns() }}
     FROM enriched
+){% if not is_this_full %},
+
+-- GAP 2: Interaction-only delivery system type update (delta only)
+-- When interaction events arrive for newsletters NOT in the current delta,
+-- pull existing newsletter from UDL, update actual_delivery_system_type, and include
+interaction_only_updates AS (
+    SELECT
+        ias.int_tenant_code,
+        ias.int_newsletter_code,
+        ias.actual_delivery_system_type AS new_delivery_system_type
+    FROM {{ ref('stg_newsletter_interaction_summary') }} ias
+    LEFT JOIN final f
+        ON ias.int_tenant_code = f.tenant_code
+       AND ias.int_newsletter_code = f.code
+    WHERE f.code IS NULL
+),
+
+udl_records_to_update AS (
+    SELECT
+        ROW_NUMBER() OVER (ORDER BY n.code)
+            + COALESCE((SELECT MAX(id) FROM final), 0)
+            + COALESCE((SELECT MAX(id) FROM {{ source('udl_published', 'NEWSLETTER_HIST') }}), 0) AS id,
+        n.data_source_code,
+        n.tenant_code,
+        n.staging_id,
+        n.code,
+        n.name,
+        n.subject,
+        n.sender_address,
+        n.send_as_email,
+        n.send_as_sms,
+        n.send_as_ms_teams_message,
+        n.send_as_slack_message,
+        n.send_as_intranet,
+        n.scheduled_at,
+        n.sent_at,
+        n.newsletter_created_by_code,
+        n.newsletter_updated_by_code,
+        n.newsletter_created_datetime,
+        n.newsletter_updated_datetime,
+        n.status_code,
+        n.category_code,
+        n.template_code,
+        n.theme_code,
+        n.is_archived,
+        n.send_as_timezone_aware_schedule,
+        n.reply_to_email_address,
+        n.recipient_info,
+        n.recipient_type_code,
+        n.is_deleted,
+        n.deleted_note,
+        n.deleted_datetime,
+        TRUE                                                         AS active_flag,
+        CURRENT_TIMESTAMP()::TIMESTAMP_NTZ                           AS active_date,
+        NULL::TIMESTAMP_NTZ                                          AS inactive_date,
+        CURRENT_USER()                                               AS created_by,
+        CURRENT_TIMESTAMP()::TIMESTAMP_NTZ                           AS created_datetime,
+        CURRENT_USER()                                               AS updated_by,
+        CURRENT_TIMESTAMP()::TIMESTAMP_NTZ                           AS updated_datetime,
+        n.hash_value,
+        n.recipient_name,
+        iou.new_delivery_system_type                                 AS actual_delivery_system_type,
+        {{ audit_columns() }}
+    FROM {{ source('udl_published', 'NEWSLETTER') }} n
+    INNER JOIN interaction_only_updates iou
+        ON n.tenant_code = iou.int_tenant_code
+       AND n.code = iou.int_newsletter_code
 )
+{% endif %}
 
 SELECT * FROM final
+{% if not is_this_full %}
+UNION ALL
+SELECT * FROM udl_records_to_update
+{% endif %}
