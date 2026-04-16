@@ -143,6 +143,7 @@ models:
           combination_of_columns:
             - tenant_code
             - code
+          where: "active_flag = TRUE"
 
   # ═══════════════════════════════════════════════════════════════════════
   # wrk_newsletter_interaction — Interaction delta work table (→ DBT_UDL.NEWSLETTER_INTERACTION)
