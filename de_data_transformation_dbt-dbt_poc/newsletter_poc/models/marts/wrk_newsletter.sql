@@ -115,15 +115,9 @@ final AS (
         deleted_note,
         deleted_datetime,
 
-        {% if is_this_full %}
         CASE WHEN rn = 1 THEN TRUE  ELSE FALSE END                  AS active_flag,
         CURRENT_TIMESTAMP()::TIMESTAMP_NTZ                           AS active_date,
         CASE WHEN rn = 1 THEN NULL  ELSE CURRENT_TIMESTAMP() END::TIMESTAMP_NTZ AS inactive_date,
-        {% else %}
-        TRUE                                                         AS active_flag,
-        CURRENT_TIMESTAMP()::TIMESTAMP_NTZ                           AS active_date,
-        NULL::TIMESTAMP_NTZ                                          AS inactive_date,
-        {% endif %}
 
         CURRENT_USER()                                               AS created_by,
         CURRENT_TIMESTAMP()::TIMESTAMP_NTZ                           AS created_datetime,
