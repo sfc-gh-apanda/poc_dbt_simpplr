@@ -41,9 +41,7 @@ deduped AS (
         ON l.tenant_code = t.tenant_code
        AND l.code = t.code
        AND l.hash_value = t.hash_value
-       AND l.is_reprocess = FALSE
     WHERE t.hash_value IS NULL
-       OR l.is_reprocess = TRUE
     {% endif %}
 ),
 
