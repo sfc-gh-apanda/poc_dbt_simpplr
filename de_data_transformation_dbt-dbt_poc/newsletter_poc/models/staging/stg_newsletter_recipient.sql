@@ -8,8 +8,8 @@
 }}
 
 {% set full_load = var('is_full_load', false) %}
-{% set entity_full_load = var('entity_specific_full_load', 'none') %}
-{% set is_entity_full_load = (full_load or entity_full_load == 'newsletter') %}
+{% set entity_full_load = var('entity_specific_full_load', 'none') | upper %}
+{% set is_entity_full_load = (full_load or 'NEWSLETTER' in entity_full_load.split(',') or entity_full_load == 'ALL') %}
 
 {% set recipient_columns %}
     LISTAGG(fv.value:name::STRING, ', ') AS recipient_name,
