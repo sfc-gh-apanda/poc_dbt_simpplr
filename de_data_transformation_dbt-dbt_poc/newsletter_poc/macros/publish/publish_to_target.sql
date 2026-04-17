@@ -29,11 +29,16 @@ Prerequisites:
     {% if var('enable_publish', true) and execute %}
 
         {# Resolve full load entity flag for the procedure #}
-        {% if var('is_full_load', false) %}
+        {% set is_full = var('is_full_load', false) %}
+        {% set entity_spec = var('entity_specific_full_load', 'NONE') | upper %}
+        {% if is_full is sameas true or is_full == 'true' or is_full == 'True' %}
             {% set full_load_entity = 'ALL' %}
+        {% elif entity_spec != 'NONE' %}
+            {% set full_load_entity = entity_spec %}
         {% else %}
-            {% set full_load_entity = var('entity_specific_full_load', 'NONE') | upper %}
+            {% set full_load_entity = 'NONE' %}
         {% endif %}
+        {{ log("Publish macro: is_full_load=" ~ is_full ~ " entity_specific=" ~ entity_spec ~ " resolved=" ~ full_load_entity, info=true) }}
 
         {% set sql %}
             CALL DBT_UDL_BATCH_PROCESS.PRC_DBT_PUBLISH_TO_TARGET(
