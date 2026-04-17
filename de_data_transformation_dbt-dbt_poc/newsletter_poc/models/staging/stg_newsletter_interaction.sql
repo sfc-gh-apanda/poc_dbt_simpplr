@@ -97,7 +97,8 @@
 
 WITH raw_data AS (
     SELECT
-        {{ interaction_columns }}
+        {{ interaction_columns }},
+        FALSE AS is_reprocess
     FROM {{ source('shared_services_staging', 'VW_ENL_NEWSLETTER_INTERACTION') }} c
     WHERE c.domain_payload::STRING IS NOT NULL
       AND c.domain_payload:id::STRING IS NOT NULL
@@ -106,7 +107,8 @@ WITH raw_data AS (
 
 reprocess_data AS (
     SELECT
-        {{ interaction_columns }}
+        {{ interaction_columns }},
+        TRUE AS is_reprocess
     FROM {{ source('shared_services_staging', 'ENL_NEWSLETTER_INTERACTION_ARCHIVE') }} c
     INNER JOIN DBT_UDL_BATCH_PROCESS.REPROCESS_REQUEST r
         ON  c.domain_payload:id::STRING = r.RECORD_CODE
@@ -119,7 +121,8 @@ reprocess_data AS (
 {% if is_entity_full_load %}
 full_load_archive AS (
     SELECT
-        {{ interaction_columns }}
+        {{ interaction_columns }},
+        FALSE AS is_reprocess
     FROM {{ source('shared_services_staging', 'ENL_NEWSLETTER_INTERACTION_ARCHIVE') }} c
     WHERE c.domain_payload::STRING IS NOT NULL
       AND c.domain_payload:id::STRING IS NOT NULL
