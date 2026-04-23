@@ -18,6 +18,7 @@ USE SCHEMA DBT_EXECUTION_RUN_STATS;
 
 CREATE TABLE IF NOT EXISTS DBT_RUN_LOG (
     run_id                  VARCHAR(50)     PRIMARY KEY     COMMENT 'dbt invocation_id',
+    batch_run_id            INTEGER         DEFAULT 0       COMMENT 'Airflow batch_run_id for end-to-end traceability',
     project_name            VARCHAR(100)                    COMMENT 'dbt project name',
     environment             VARCHAR(20)                     COMMENT 'Target environment (dev/prod)',
     run_started_at          TIMESTAMP_NTZ                   COMMENT 'Run start timestamp',
@@ -32,6 +33,10 @@ CREATE TABLE IF NOT EXISTS DBT_RUN_LOG (
     role_name               VARCHAR(100)                    COMMENT 'Snowflake role',
     created_at              TIMESTAMP_NTZ   DEFAULT CURRENT_TIMESTAMP()
 );
+
+-- Add batch_run_id for existing deployments
+ALTER TABLE IF EXISTS DBT_RUN_LOG ADD COLUMN IF NOT EXISTS batch_run_id INTEGER DEFAULT 0
+    COMMENT 'Airflow batch_run_id for end-to-end traceability';
 
 -- =============================================================
 -- 3. DBT_MODEL_LOG — one row per model per run
@@ -54,11 +59,19 @@ CREATE TABLE IF NOT EXISTS DBT_MODEL_LOG (
     rows_affected           INTEGER                         COMMENT 'Rows produced / affected',
     is_incremental          BOOLEAN                         COMMENT 'Incremental model flag',
     incremental_strategy    VARCHAR(50)                     COMMENT 'merge / append / delete+insert',
+    batch_run_id            INTEGER         DEFAULT 0       COMMENT 'Airflow batch_run_id for end-to-end traceability',
     created_at              TIMESTAMP_NTZ   DEFAULT CURRENT_TIMESTAMP()
 );
 
 -- Widen batch_id for existing deployments (invocation_id + model_name can exceed 50 chars)
 ALTER TABLE IF EXISTS DBT_MODEL_LOG MODIFY COLUMN batch_id VARCHAR(150);
+
+-- Add batch_run_id for existing deployments
+ALTER TABLE IF EXISTS DBT_MODEL_LOG ADD COLUMN IF NOT EXISTS batch_run_id INTEGER DEFAULT 0
+    COMMENT 'Airflow batch_run_id for end-to-end traceability';
+
+-- Widen log_id for existing deployments
+ALTER TABLE IF EXISTS DBT_MODEL_LOG MODIFY COLUMN log_id VARCHAR(500);
 
 -- =============================================================
 -- 4. Summary views for monitoring
@@ -80,6 +93,25 @@ WHERE run_started_at >= DATEADD('day', -30, CURRENT_DATE())
 GROUP BY 1
 ORDER BY 1 DESC;
 
+CREATE OR REPLACE VIEW V_BATCH_RUN_TRACEABILITY AS
+SELECT
+    r.batch_run_id,
+    r.run_id,
+    r.project_name,
+    r.environment,
+    r.run_started_at,
+    r.run_ended_at,
+    r.run_duration_seconds,
+    r.run_status,
+    r.models_run,
+    r.models_success,
+    r.models_failed,
+    r.warehouse_name,
+    r.user_name
+FROM DBT_RUN_LOG r
+WHERE r.run_started_at >= DATEADD('day', -30, CURRENT_DATE())
+ORDER BY r.batch_run_id DESC, r.run_started_at DESC;
+
 CREATE OR REPLACE VIEW V_MODEL_EXECUTION_HISTORY AS
 SELECT
     m.model_name,
@@ -100,6 +132,7 @@ ORDER BY total_runs DESC;
 CREATE OR REPLACE VIEW V_RECENT_FAILURES AS
 SELECT
     m.run_id,
+    m.batch_run_id,
     m.model_name,
     m.schema_name,
     m.status,

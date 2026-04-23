@@ -41,7 +41,7 @@ This gives PRC_DBT_SMART_RETRY reliable data to determine what needs re-run.
                         schema_name, database_name, materialization,
                         batch_id, status, error_message,
                         started_at, ended_at,
-                        rows_affected, is_incremental
+                        rows_affected, is_incremental, batch_run_id
                     )
                     SELECT
                         '{{ log_id }}',
@@ -57,7 +57,8 @@ This gives PRC_DBT_SMART_RETRY reliable data to determine what needs re-run.
                         CURRENT_TIMESTAMP(),
                         CURRENT_TIMESTAMP(),
                         0,
-                        {{ 'TRUE' if result.node.config.materialized == 'incremental' else 'FALSE' }}
+                        {{ 'TRUE' if result.node.config.materialized == 'incremental' else 'FALSE' }},
+                        {{ var('batch_run_id', 0) }}
                     WHERE NOT EXISTS (
                         SELECT 1 FROM {{ audit_db_schema }}.DBT_MODEL_LOG
                         WHERE log_id = '{{ log_id }}'
