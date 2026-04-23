@@ -66,6 +66,7 @@ This gives PRC_DBT_SMART_RETRY reliable data to determine what needs re-run.
                 {% endset %}
 
                 {% do run_query(sql) %}
+                {% do run_query("COMMIT") %}
                 {% do log("Logged " ~ mapped_status ~ " for model: " ~ result.node.name ~ " — " ~ result.message, info=true) %}
 
             {% endif %}

@@ -40,6 +40,7 @@ Prerequisites:
         {% endset %}
 
         {% do run_query(sql) %}
+        {% do run_query("COMMIT") %}
         {% do log("Run logging started: " ~ invocation_id, info=true) %}
     {% endif %}
 {% endmacro %}
@@ -70,6 +71,7 @@ Prerequisites:
         {% endset %}
 
         {% do run_query(sql) %}
+        {% do run_query("COMMIT") %}
         {% do log("Run logging completed: " ~ invocation_id, info=true) %}
     {% endif %}
 {% endmacro %}

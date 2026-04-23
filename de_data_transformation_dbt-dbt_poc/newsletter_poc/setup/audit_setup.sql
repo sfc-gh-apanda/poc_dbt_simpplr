@@ -43,7 +43,7 @@ ALTER TABLE IF EXISTS DBT_RUN_LOG ADD COLUMN IF NOT EXISTS batch_run_id INTEGER 
 -- =============================================================
 
 CREATE TABLE IF NOT EXISTS DBT_MODEL_LOG (
-    log_id                  VARCHAR(100)    PRIMARY KEY     COMMENT 'Unique log entry (run_id + model)',
+    log_id                  VARCHAR(900)    PRIMARY KEY     COMMENT 'Unique log entry (run_id + model)',
     run_id                  VARCHAR(50)                     COMMENT 'FK to DBT_RUN_LOG',
     project_name            VARCHAR(100)                    COMMENT 'dbt project name',
     model_name              VARCHAR(200)                    COMMENT 'Model name',
@@ -70,8 +70,8 @@ ALTER TABLE IF EXISTS DBT_MODEL_LOG MODIFY COLUMN batch_id VARCHAR(150);
 ALTER TABLE IF EXISTS DBT_MODEL_LOG ADD COLUMN IF NOT EXISTS batch_run_id INTEGER DEFAULT 0
     COMMENT 'Airflow batch_run_id for end-to-end traceability';
 
--- Widen log_id for existing deployments
-ALTER TABLE IF EXISTS DBT_MODEL_LOG MODIFY COLUMN log_id VARCHAR(500);
+-- Widen log_id for existing deployments (use 900 to match or exceed prior deployments)
+ALTER TABLE IF EXISTS DBT_MODEL_LOG MODIFY COLUMN log_id VARCHAR(900);
 
 -- =============================================================
 -- 4. Summary views for monitoring
